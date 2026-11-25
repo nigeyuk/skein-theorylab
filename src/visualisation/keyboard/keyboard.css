@@ -1,0 +1,58 @@
+.keyboard-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-panel);
+}
+
+.keyboard-dock summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 10px clamp(20px, 4vw, 55px);
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+}
+
+.keyboard-dock summary::-webkit-details-marker { display: none; }
+.keyboard-dock summary:focus-visible { outline-offset: -4px; }
+.keyboard-dock summary > svg { flex: none; color: var(--color-accent); }
+.keyboard-status { margin-left: auto; color: var(--color-muted); font-size: .875rem; font-weight: 400; }
+.keyboard-dock[open] .keyboard-chevron { rotate: 180deg; }
+
+.keyboard-preview {
+  padding: 0 clamp(20px, 4vw, 55px) 18px;
+  color: var(--color-muted);
+}
+
+.keyboard-keys {
+  display: flex;
+  max-width: 620px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+.keyboard-octave { display: flex; flex: 1; }
+
+.keyboard-natural {
+  position: relative;
+  flex: 1;
+  height: clamp(52px, 10vh, 92px);
+  border-right: 1px solid #888398;
+  background: linear-gradient(#d3cede, #f2eef9);
+}
+
+.keyboard-natural:not(:nth-child(3), :last-child)::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0 -31% 36% auto;
+  width: 62%;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(#18161e, #383345);
+  content: '';
+}
