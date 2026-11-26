@@ -1,7 +1,11 @@
 import type { Pitch } from '../music-theory'
 import type { NoteOff, NoteOn } from '../note-input'
+import type { InstrumentControls } from './instrument'
 
 export { createAudioEngine } from './web-audio'
+export type { AudioEngineOptions } from './web-audio'
+export { sampleInstrument } from './sampler'
+export type { AudioInstrument, InstrumentControls, InstrumentDefinition, InstrumentPreferences, InstrumentNote, InstrumentState, InstrumentVoice } from './instrument'
 
 /** Sound frequency in cycles per second. */
 export interface AudioFrequency {
@@ -22,6 +26,7 @@ export interface PlaybackFrame {
 type VoiceAddress = Pick<NoteOn, 'sourceId' | 'pressId' | 'velocity'>
 
 export interface AudioEngine {
+  readonly instruments: InstrumentControls
   resume(): Promise<void>
   noteOn(note: NoteOn): Promise<void>
   noteOnMidi(note: VoiceAddress, midi: number): Promise<void>

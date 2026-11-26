@@ -31,13 +31,19 @@ The shell composes modules through their public interfaces. Reference, exercise,
 
 ## Shared virtual keyboard and audio
 
-The shell creates one reusable Web Audio engine per application instance. The first playback gesture initialises or resumes its audio context. The engine accepts pitch-based note events, MIDI note numbers and frequencies in hertz. It schedules simultaneous or sequential frames on the audio clock. A triangle-wave voice uses attack and release ramps, and output is bounded by a 24-voice limit, per-voice gain, shared master volume, mute and compression. The contract can support a different instrument implementation without changing the workspaces.
+The shell creates one reusable Web Audio engine per application instance. The first playback gesture initialises or resumes its audio context. The engine accepts pitch-based note events, MIDI note numbers and frequencies in hertz. It schedules simultaneous or sequential frames on the audio clock. The instrument manager loads registered instrument definitions and owns selection, readiness and fallback. The sampled grand piano and triangle-wave synthesiser share attack and release envelopes, a bounded voice pool, master volume, mute, compression and peak limiting.
 
 - Each pointer, computer-key, physical MIDI or programmatic press has a source and press ID. The engine keeps independent voices for overlapping inputs, even when they share a pitch. It cancels pending starts and scheduled notes on source release or all-notes-off and disconnects ended voices. The shell stops playback when leaving a workspace or losing window focus.
 - The dock starts with three octaves and accepts octave bounds, note labels and external pitch annotations. An annotation can carry a written spelling, scale degree or chord tone role. Active piano input uses the application accent, while chord tone roles use separate educational colours.
 - Keyboard shortcuts are scoped to focused piano keys. Releasing keys, leaving the piano, losing pointer capture, collapsing the dock or hiding the page releases held voices. Keyboard availability is set by each workspace, with independent available, disabled and hidden states.
 - Intervals and Chords own their selection state and derive results and explanations from the theory core. The keyboard emits selected notes and accepts highlights keyed by sounding pitch, so spelling stays with the workspace even when enharmonic notes share a piano key.
 - The application sidebar renders its version from a static import of package metadata. Development phase names are tracked in the roadmap.
+
+### Instrument loading and playback
+
+The app selects the acoustic grand on first use and persists later choices. The versioned local manifest defines sample roots, velocity layers, release time and polyphony. The sample implementation uses `AudioBufferSourceNode` and retains decoded buffers while the app audio context is open. The synth remains available during loading and after failures. Held voices are released through their owning instrument, and explicit instrument changes cancel pending playback. Pedal semantics stay in the input path so sample playback, synth playback and future instruments share the same handling.
+
+The registration interface can host additional instrument implementations without changes to learning workspaces. SoundFont playback, user-imported instrument packs and the SKEIN Score host remain future work. See [audio architecture and sample provenance](src/audio/README.md).
 
 ### Unified input and Web MIDI
 

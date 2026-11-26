@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AudioWaveform, ChevronDown, Menu, MoveUpRight } from 'lucide-react'
 import { KeyboardPanel } from '../visualisation/keyboard/KeyboardPanel'
-import { createAudioEngine } from '../audio'
+import { createAudioEngine, sampleInstrument } from '../audio'
 import { browserMidiRequest, createMidiInput } from '../midi'
 import { createNoteInputManager } from '../note-input'
 import { createKeyboardPreferences } from '../storage/keyboard-preferences'
@@ -14,6 +14,12 @@ import { dashboard, workspaceGroups } from './workspaces'
 import type { Workspace } from './workspaces'
 
 const path = (id: string) => '#/' + id
+const acousticGrand = sampleInstrument({
+  id: 'acoustic-grand',
+  label: 'Acoustic grand piano',
+  creditsUrl: import.meta.env.BASE_URL + 'instruments/salamander-v1/ATTRIBUTION.md',
+  baseUrl: import.meta.env.BASE_URL + 'instruments/salamander-v1/',
+})
 
 function NavLink({ workspace, active }: { workspace: Workspace; active: boolean }) {
   const Icon = workspace.icon
@@ -111,7 +117,14 @@ export function App() {
   const [{ audio, input, midi, keyboardPreferences }] = useState(() => {
     const keyboardPreferences = createKeyboardPreferences()
     const saved = keyboardPreferences.getState()
-    const audio = createAudioEngine()
+    const audio = createAudioEngine(undefined, {
+      instruments: [acousticGrand],
+      defaultInstrumentId: acousticGrand.id,
+      preferences: {
+        load: () => keyboardPreferences.getState().instrumentId,
+        save: (instrumentId) => keyboardPreferences.update({ instrumentId }),
+      },
+    })
     audio.setSettings({ volume: saved.volume, muted: saved.muted })
     const input = createNoteInputManager(audio)
     const midi = createMidiInput({

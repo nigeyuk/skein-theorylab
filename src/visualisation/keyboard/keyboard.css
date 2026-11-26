@@ -112,3 +112,11 @@
 }
 .midi-status { flex: 1 1 175px; font-size: .8125rem; }
 .midi-controls select { max-width: min(13rem, 57vw); }
+
+.instrument-controls {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 7px 10px; margin-top: 8px;
+}
+.instrument-status { font-size: .8125rem; }
+.instrument-controls progress { width: 82px; height: 10px; accent-color: var(--color-accent); }
+.instrument-controls select { max-width: min(13rem, 57vw); }
+.instrument-credits { color: var(--color-accent); font-size: .8125rem; text-decoration: underline; }

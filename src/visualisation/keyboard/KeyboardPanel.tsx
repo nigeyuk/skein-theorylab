@@ -5,6 +5,7 @@ import type { Note } from '../../music-theory'
 import type { MidiInput } from '../../midi'
 import type { NoteInputManager } from '../../note-input'
 import type { KeyboardPreferences } from '../../storage/keyboard-preferences'
+import { InstrumentControls } from './InstrumentControls'
 import { MidiControls } from './MidiControls'
 import type { KeyboardAccess, KeyboardKeyAnnotation } from './model'
 import { PianoKeys } from './PianoKeys'
@@ -92,6 +93,7 @@ export function KeyboardPanel({ access, audio, input, midi, preferences, annotat
                   </button>
                   {(fitted.first !== range.first || fitted.last !== range.last) && <button className="lab-button" type="button" onClick={() => setTemporaryRange(fitted)}>Show selection</button>}
                 </div>
+                <InstrumentControls controls={audio.instruments} onChange={() => { midi.resetNotes(); input.panic() }} />
                 <MidiControls midi={midi} input={input} audio={audio} />
               </div>
               <PianoKeys config={{ octaveRange: range, showNoteLabels: saved.showNoteLabels, annotations }} noteInput={input} onNote={onNote} />

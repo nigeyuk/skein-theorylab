@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createAudioEngine } from '../src/audio'
+import { createAudioEngine, sampleInstrument } from '../src/audio'
 import { fromMidi } from '../src/music-theory'
+import { createNoteInputManager } from '../src/note-input'
 import type { NoteOn, NoteOff } from '../src/note-input'
+import { createMidiInput } from '../src/midi'
 
 function param() {
   return {
@@ -26,7 +28,8 @@ function oscillatorNode() {
   }
 }
 
-function audioHarness(resumeGate: Promise<void> = Promise.resolve()) {
+function audioHarness(resumeGate: Promise<void> = Promise.resolve(), options?: Parameters<typeof createAudioEngine>[1]) {
+  const buffers: (ReturnType<typeof oscillatorNode> & { buffer: AudioBuffer | null; playbackRate: ReturnType<typeof param> })[] = []
   const oscillators: ReturnType<typeof oscillatorNode>[] = []
   const gains: ReturnType<typeof gainNode>[] = []
   const context = {
@@ -38,17 +41,24 @@ function audioHarness(resumeGate: Promise<void> = Promise.resolve()) {
       oscillators.push(oscillator)
       return oscillator
     }),
+    createBufferSource: vi.fn(() => {
+      const source = { ...oscillatorNode(), buffer: null, playbackRate: param() }
+      buffers.push(source)
+      return source
+    }),
+    decodeAudioData: vi.fn(async (data: ArrayBuffer) => ({ marker: new Uint8Array(data)[0] }) as unknown as AudioBuffer),
     createGain: vi.fn(() => {
       const node = gainNode()
       gains.push(node)
       return node
     }),
+    createWaveShaper: vi.fn(() => ({ curve: null, connect: vi.fn(), disconnect: vi.fn() })),
     createDynamicsCompressor: vi.fn(() => ({ threshold: param(), connect: vi.fn(), disconnect: vi.fn() })),
     resume: vi.fn(async () => { await resumeGate; context.state = 'running' }),
     close: vi.fn(async () => { context.state = 'closed' }),
   }
   const factory = vi.fn(() => context as unknown as AudioContext)
-  return { engine: createAudioEngine(factory), context, factory, oscillators, gains }
+  return { engine: createAudioEngine(factory, options), context, factory, oscillators, buffers, gains }
 }
 
 const note = (sourceId = 'piano', pressId = 'pointer', midi = 69): NoteOn => ({
@@ -135,5 +145,194 @@ describe('shared Web Audio engine', () => {
     await Promise.all(Array.from({ length: 30 }, (_, i) => engine.noteOn(note('piano', String(i)))))
     expect(oscillators).toHaveLength(24)
     await expect(engine.noteOnFrequency(note(), { hertz: 0 })).rejects.toThrow(RangeError)
+  })
+})
+
+const pianoManifest = {
+  schemaVersion: 1, instrumentId: 'piano', releaseSeconds: 0.24, maxPolyphony: 2,
+  samples: [
+    { midi: 60, velocity: 0.3, file: 'soft.mp3' },
+    { midi: 60, velocity: 0.9, file: 'hard.mp3' },
+    { midi: 66, velocity: 0.9, file: 'hard.mp3' },
+  ],
+}
+
+function servePiano() {
+  return vi.fn<typeof fetch>(async (url) => {
+    const file = String(url).split('/').at(-1)
+    if (file === 'manifest.json') return Response.json(pianoManifest)
+    return new Response(Uint8Array.of(file === 'soft.mp3' ? 1 : 2))
+  })
+}
+
+function sampledHarness(fetchFile: typeof fetch, preferences?: { load(): string | null; save(id: string): void }) {
+  return audioHarness(Promise.resolve(), {
+    instruments: [sampleInstrument({ id: 'piano', label: 'Piano', baseUrl: '/piano/', fetchFile })],
+    defaultInstrumentId: 'piano',
+    preferences,
+  })
+}
+
+async function ready(engine: ReturnType<typeof createAudioEngine>) {
+  await vi.waitFor(() => expect(engine.instruments.getState()).toMatchObject({ activeId: 'piano', status: 'ready' }))
+}
+
+describe('sampled piano and instrument manager', () => {
+  it('loads and decodes unique samples, reports progress, maps pitch and uses real velocity layers', async () => {
+    const files = servePiano()
+    const { engine, context, buffers, gains } = sampledHarness(files)
+    const status = vi.fn(() => engine.instruments.getState())
+    engine.instruments.subscribe(status)
+    expect(engine.instruments.getState()).toMatchObject({ selectedId: 'piano', activeId: 'synth', status: 'idle' })
+    expect(files).not.toHaveBeenCalled()
+    await engine.resume()
+    await ready(engine)
+    expect(status.mock.results.map(({ value }) => value)).toContainEqual(expect.objectContaining({ status: 'loading', total: 3 }))
+    expect(engine.instruments.getState()).toMatchObject({ loaded: 3, total: 3 })
+    expect(files).toHaveBeenCalledTimes(3)
+    expect(context.decodeAudioData).toHaveBeenCalledTimes(2)
+
+    await engine.noteOn({ ...note('pointer', 'soft', 61), velocity: 0.3 })
+    await engine.noteOnMidi(note('midi', 'hard'), 61)
+    expect(buffers[0]?.buffer).toMatchObject({ marker: 1 })
+    expect(buffers[1]?.buffer).toMatchObject({ marker: 2 })
+    expect(buffers[0]?.playbackRate.setValueAtTime.mock.lastCall?.[0]).toBeCloseTo(2 ** (1 / 12))
+    expect(gains[1]?.gain.linearRampToValueAtTime.mock.lastCall?.[0]).toBeCloseTo(0.051)
+    expect(gains[2]?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.17, 10.006)
+    expect(buffers.every(({ stop }) => stop.mock.calls.length === 0)).toBe(true)
+    await engine.dispose()
+    expect(buffers.every(({ disconnect }) => disconnect.mock.calls.length === 1)).toBe(true)
+    expect(context.close).toHaveBeenCalledOnce()
+  })
+
+  it('falls back on asset failure, permits retry and keeps the oscillator usable', async () => {
+    const files = servePiano()
+    files.mockResolvedValueOnce(new Response(null, { status: 404 }))
+    const { engine, oscillators, buffers } = sampledHarness(files)
+    await engine.resume()
+    await vi.waitFor(() => expect(engine.instruments.getState()).toMatchObject({ status: 'error', activeId: 'synth' }))
+    await engine.noteOn(note())
+    expect(oscillators).toHaveLength(1)
+    expect(buffers).toHaveLength(0)
+    await engine.instruments.select('piano')
+    await ready(engine)
+    await engine.noteOn(note())
+    expect(buffers).toHaveLength(1)
+  })
+
+  it('rejects invalid manifests and decode failures without activating the piano', async () => {
+    const invalid = servePiano()
+    invalid.mockResolvedValueOnce(Response.json({
+      ...pianoManifest, samples: [{ midi: 60, velocity: 1, file: '../foreign.mp3' }],
+    }))
+    const first = sampledHarness(invalid)
+    await first.engine.resume()
+    await vi.waitFor(() => expect(first.engine.instruments.getState().status).toBe('error'))
+    expect(invalid).toHaveBeenCalledOnce()
+
+    const second = sampledHarness(servePiano())
+    second.context.decodeAudioData.mockRejectedValueOnce(new Error('unsupported encoding'))
+    await second.engine.resume()
+    await vi.waitFor(() => expect(second.engine.instruments.getState()).toMatchObject({ status: 'error', activeId: 'synth' }))
+  })
+
+  it('switches safely, caches decoded buffers and persists the selected instrument', async () => {
+    const preferences = { load: vi.fn(() => 'synth'), save: vi.fn() }
+    const { engine, context, oscillators, buffers } = sampledHarness(servePiano(), preferences)
+    expect(engine.instruments.getState().selectedId).toBe('synth')
+    await engine.noteOn(note())
+    await engine.instruments.select('piano')
+    expect(oscillators[0]?.stop).toHaveBeenCalledWith(10.065)
+    await ready(engine)
+    await engine.noteOn(note())
+    await engine.instruments.select('synth')
+    expect(buffers[0]?.stop).toHaveBeenCalledWith(10.24)
+    await engine.instruments.select('piano')
+    expect(engine.instruments.getState()).toMatchObject({ status: 'ready', activeId: 'piano' })
+    expect(context.decodeAudioData).toHaveBeenCalledTimes(2)
+    expect(preferences.save.mock.calls.flat()).toEqual(['piano', 'synth', 'piano'])
+  })
+
+  it('keeps an existing synth note releasable when the default piano becomes ready', async () => {
+    const files = servePiano()
+    let allowLoad!: (response: Response) => void
+    files.mockReturnValueOnce(new Promise((resolve) => { allowLoad = resolve }))
+    const { engine, oscillators, buffers } = sampledHarness(files)
+    const early = note('pointer', 'early')
+    await engine.noteOn(early)
+    expect(oscillators).toHaveLength(1)
+    allowLoad(Response.json(pianoManifest))
+    await ready(engine)
+    await engine.noteOn(note('midi', 'later'))
+    engine.noteOff(off(early))
+    expect(oscillators[0]?.stop).toHaveBeenCalledWith(10.065)
+    expect(buffers[0]?.stop).not.toHaveBeenCalled()
+    await engine.dispose()
+  })
+
+  it('aborts an obsolete load and retains the new selection after its late result', async () => {
+    let finish!: (response: Response) => void
+    let signal: AbortSignal | null | undefined
+    const files: typeof fetch = (_request, options) => {
+      signal = options?.signal
+      return new Promise((resolve) => { finish = resolve })
+    }
+    const { engine } = sampledHarness(files)
+    await engine.resume()
+    expect(engine.instruments.getState().status).toBe('loading')
+    await engine.instruments.select('synth')
+    expect(signal?.aborted).toBe(true)
+    finish(Response.json(pianoManifest))
+    await Promise.resolve()
+    expect(engine.instruments.getState()).toMatchObject({ status: 'ready', activeId: 'synth' })
+  })
+
+  it('schedules sample chords, steals a voice with a short ramp and releases all sources', async () => {
+    const { engine, buffers } = sampledHarness(servePiano())
+    await engine.resume()
+    await ready(engine)
+    await engine.play('chord', [{ pitches: [fromMidi(60), fromMidi(64)], offset: 0, duration: 0.5 }])
+    expect(buffers.map(({ start }) => start.mock.lastCall?.[0])).toEqual([10.02, 10.02])
+    await engine.noteOn(note('pointer', 'live'))
+    expect(buffers).toHaveLength(3)
+    expect(buffers[0]?.stop).toHaveBeenLastCalledWith(10.012)
+    engine.allNotesOff()
+    expect(buffers[1]?.stop).toHaveBeenLastCalledWith(10.24)
+    expect(buffers[2]?.stop).toHaveBeenLastCalledWith(10.24)
+    buffers[0]?.onended?.()
+    expect(buffers[0]?.disconnect).toHaveBeenCalledOnce()
+  })
+
+  it('keeps MIDI sustain and independent overlapping sources on the selected piano', async () => {
+    const { engine, buffers } = sampledHarness(servePiano())
+    await engine.resume()
+    await ready(engine)
+    const input = createNoteInputManager(engine)
+    const port = Object.assign(new EventTarget(), {
+      id: 'usb', name: 'USB keys', state: 'connected', connection: 'open',
+      open: async () => {}, close: async () => {},
+    })
+    const access = Object.assign(new EventTarget(), { inputs: new Map([['usb', port]]) })
+    const pending: Promise<void>[] = []
+    const midi = createMidiInput({
+      requestAccess: async () => access as unknown as MIDIAccess,
+      emit: (event) => { pending.push(input.dispatch(event)) },
+    })
+    const send = (...data: number[]) => port.dispatchEvent(Object.assign(new Event('midimessage'), { data: Uint8Array.from(data) }))
+    await midi.enable()
+    await input.dispatch(note('pointer', 'live', 60))
+    send(0xb0, 64, 127)
+    send(0x90, 60, 100)
+    await Promise.all(pending.splice(0))
+    expect(buffers).toHaveLength(2)
+    send(0x90, 60, 0)
+    expect(buffers[1]?.stop).not.toHaveBeenCalled()
+    send(0xb0, 64, 0)
+    expect(buffers[1]?.stop).toHaveBeenCalledWith(10.24)
+    expect(buffers[0]?.stop).not.toHaveBeenCalled()
+    input.panic()
+    expect(buffers[0]?.stop).toHaveBeenCalledWith(10.24)
+    midi.disable()
+    await engine.dispose()
   })
 })

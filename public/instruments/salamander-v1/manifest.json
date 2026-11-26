@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "instrumentId": "acoustic-grand",
+  "revision": 1,
+  "name": "Acoustic grand piano",
+  "releaseSeconds": 0.24,
+  "maxPolyphony": 24,
+  "attribution": "Salamander Grand Piano v3 by Alexander Holm, CC BY 3.0",
+  "sourceRevision": "3382bf9496bba2486f5ab0de55a264d1dfc38404",
+  "samples": [
+    {
+      "midi": 21,
+      "velocity": 0.32,
+      "file": "A0-v4.mp3",
+      "sourceFile": "A0v4.flac",
+      "sourceBytes": 2607698,
+      "bytes": 36621
+    },
+    {
+      "midi": 21,
+      "velocity": 0.88,
+      "file": "A0-v13.mp3",
+      "sourceFile": "A0v13.flac",
+      "sourceBytes": 2814539,
+      "bytes": 36621
+    },
+    {
+      "midi": 24,
+      "velocity": 0.32,
+      "file": "C1-v4.mp3",
+      "sourceFile": "C1v4.flac",
+      "sourceBytes": 2479481,
+      "bytes": 36621
+    },
+    {
+      "midi": 24,
+      "velocity": 0.88,
+      "file": "C1-v13.mp3",
+      "sourceFile": "C1v13.flac",
+      "sourceBytes": 2551193,
+      "bytes": 36621
+    },
+    {
+      "midi": 30,
+      "velocity": 0.32,
+      "file": "Fs1-v4.mp3",
+      "sourceFile": "F#1v4.flac",
+      "sourceBytes": 2613244,
+      "bytes": 36621
+    },
+    {
+      "midi": 30,
+      "velocity": 0.88,
+      "file": "Fs1-v13.mp3",
+      "sourceFile": "F#1v13.flac",
+      "sourceBytes": 2727847,
+      "bytes": 36621
+    },
+    {
+      "midi": 36,
+      "velocity": 0.32,
+      "file": "C2-v4.mp3",
+      "sourceFile": "C2v4.flac",
+      "sourceBytes": 2222842,
+      "bytes": 36621
+    },
+    {
+      "midi": 36,
+      "velocity": 0.88,
+      "file": "C2-v13.mp3",
+      "sourceFile": "C2v13.flac",
+      "sourceBytes": 2624902,
+      "bytes": 36621
+    },
+    {
+      "midi": 42,
+      "velocity": 0.32,
+      "file": "Fs2-v4.mp3",
+      "sourceFile": "F#2v4.flac",
+      "sourceBytes": 2174299,
+      "bytes": 36621
+    },
+    {
+      "midi": 42,
+      "velocity": 0.88,
+      "file": "Fs2-v13.mp3",
+      "sourceFile": "F#2v13.flac",
+      "sourceBytes": 2407608,
+      "bytes": 36621
+    },
+    {
+      "midi": 48,
+      "velocity": 0.32,
+      "file": "C3-v4.mp3",
+      "sourceFile": "C3v4.flac",
+      "sourceBytes": 1689449,
+      "bytes": 36621
+    },
+    {
+      "midi": 48,
+      "velocity": 0.88,
+      "file": "C3-v13.mp3",
+      "sourceFile": "C3v13.flac",
+      "sourceBytes": 1803471,
+      "bytes": 36621
+    },
+    {
+      "midi": 54,
+      "velocity": 0.32,
+      "file": "Fs3-v4.mp3",
+      "sourceFile": "F#3v4.flac",
+      "sourceBytes": 1767209,
+      "bytes": 36621
+    },
+    {
+      "midi": 54,
+      "velocity": 0.88,
+      "file": "Fs3-v13.mp3",
+      "sourceFile": "F#3v13.flac",
+      "sourceBytes": 1816533,
+      "bytes": 36621
+    },
+    {
+      "midi": 60,
+      "velocity": 0.32,
+      "file": "C4-v4.mp3",
+      "sourceFile": "C4v4.flac",
+      "sourceBytes": 1628805,
+      "bytes": 36621
+    },
+    {
+      "midi": 60,
+      "velocity": 0.88,
+      "file": "C4-v13.mp3",
+      "sourceFile": "C4v13.flac",
+      "sourceBytes": 1768613,
+      "bytes": 36621
+    },
+    {
+      "midi": 66,
+      "velocity": 0.32,
+      "file": "Fs4-v4.mp3",
+      "sourceFile": "F#4v4.flac",
+      "sourceBytes": 1317911,
+      "bytes": 36621
+    },
+    {
+      "midi": 66,
+      "velocity": 0.88,
+      "file": "Fs4-v13.mp3",
+      "sourceFile": "F#4v13.flac",
+      "sourceBytes": 1491508,
+      "bytes": 36621
+    },
+    {
+      "midi": 72,
+      "velocity": 0.32,
+      "file": "C5-v4.mp3",
+      "sourceFile": "C5v4.flac",
+      "sourceBytes": 1468588,
+      "bytes": 36621
+    },
+    {
+      "midi": 72,
+      "velocity": 0.88,
+      "file": "C5-v13.mp3",
+      "sourceFile": "C5v13.flac",
+      "sourceBytes": 1498911,
+      "bytes": 36621
+    },
+    {
+      "midi": 78,
+      "velocity": 0.32,
+      "file": "Fs5-v4.mp3",
+      "sourceFile": "F#5v4.flac",
+      "sourceBytes": 1119439,
+      "bytes": 36621
+    },
+    {
+      "midi": 78,
+      "velocity": 0.88,
+      "file": "Fs5-v13.mp3",
+      "sourceFile": "F#5v13.flac",
+      "sourceBytes": 1155608,
+      "bytes": 36621
+    },
+    {
+      "midi": 84,
+      "velocity": 0.32,
+      "file": "C6-v4.mp3",
+      "sourceFile": "C6v4.flac",
+      "sourceBytes": 601137,
+      "bytes": 36621
+    },
+    {
+      "midi": 84,
+      "velocity": 0.88,
+      "file": "C6-v13.mp3",
+      "sourceFile": "C6v13.flac",
+      "sourceBytes": 701778,
+      "bytes": 36621
+    },
+    {
+      "midi": 90,
+      "velocity": 0.32,
+      "file": "Fs6-v4.mp3",
+      "sourceFile": "F#6v4.flac",
+      "sourceBytes": 605865,
+      "bytes": 36621
+    },
+    {
+      "midi": 90,
+      "velocity": 0.88,
+      "file": "Fs6-v13.mp3",
+      "sourceFile": "F#6v13.flac",
+      "sourceBytes": 655144,
+      "bytes": 36621
+    },
+    {
+      "midi": 96,
+      "velocity": 0.32,
+      "file": "C7-v4.mp3",
+      "sourceFile": "C7v4.flac",
+      "sourceBytes": 401277,
+      "bytes": 33165
+    },
+    {
+      "midi": 96,
+      "velocity": 0.88,
+      "file": "C7-v13.mp3",
+      "sourceFile": "C7v13.flac",
+      "sourceBytes": 470922,
+      "bytes": 36621
+    },
+    {
+      "midi": 102,
+      "velocity": 0.32,
+      "file": "Fs7-v4.mp3",
+      "sourceFile": "F#7v4.flac",
+      "sourceBytes": 570635,
+      "bytes": 36621
+    },
+    {
+      "midi": 102,
+      "velocity": 0.88,
+      "file": "Fs7-v13.mp3",
+      "sourceFile": "F#7v13.flac",
+      "sourceBytes": 572098,
+      "bytes": 36621
+    },
+    {
+      "midi": 108,
+      "velocity": 0.32,
+      "file": "C8-v4.mp3",
+      "sourceFile": "C8v4.flac",
+      "sourceBytes": 306364,
+      "bytes": 23373
+    },
+    {
+      "midi": 108,
+      "velocity": 0.88,
+      "file": "C8-v13.mp3",
+      "sourceFile": "C8v13.flac",
+      "sourceBytes": 443825,
+      "bytes": 32301
+    }
+  ]
+}
