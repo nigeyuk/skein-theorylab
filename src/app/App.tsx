@@ -1,6 +1,14 @@
-import { useEffect, useRef } from 'react'
-import { AudioWaveform, ChevronDown, FlaskConical, Menu, MoveUpRight } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AudioWaveform, ChevronDown, Menu, MoveUpRight } from 'lucide-react'
 import { KeyboardPanel } from '../visualisation/keyboard/KeyboardPanel'
+import { createAudioEngine } from '../audio'
+import { browserMidiRequest, createMidiInput } from '../midi'
+import { createNoteInputManager } from '../note-input'
+import { midiPreferences } from '../storage/midi-preferences'
+import { ChordWorkspace } from '../reference/interactive/ChordWorkspace'
+import { IntervalWorkspace } from '../reference/interactive/IntervalWorkspace'
+import type { KeyboardAccess } from '../visualisation/keyboard/model'
+import { AppVersion } from './AppVersion'
 import { useNavigation } from './navigation'
 import { dashboard, workspaceGroups } from './workspaces'
 import type { Workspace } from './workspaces'
@@ -43,7 +51,7 @@ function Sidebar({ active }: { active: string }) {
         <summary><Menu size={18} aria-hidden="true" /> Workspaces <ChevronDown size={16} aria-hidden="true" /></summary>
         <WorkspaceNav active={active} />
       </details>
-      <div className="sidebar-footer"><FlaskConical size={16} aria-hidden="true" /> Phase 00 <span>Foundation</span></div>
+      <AppVersion />
     </aside>
   )
 }
@@ -100,25 +108,59 @@ export function App() {
   const workspace = useNavigation((state) => state.workspace)
   const initialWorkspace = useRef(workspace.id)
   const main = useRef<HTMLElement>(null)
+  const [{ audio, input, midi }] = useState(() => {
+    const audio = createAudioEngine()
+    const input = createNoteInputManager(audio)
+    const midi = createMidiInput({
+      requestAccess: browserMidiRequest(),
+      preferences: midiPreferences,
+      emit: (event) => { void input.dispatch(event).catch(() => {}) },
+    })
+    return { audio, input, midi }
+  })
+  const access: KeyboardAccess = workspace.keyboard ?? { mode: 'hidden' }
+  const Study = workspace.id === 'intervals' ? IntervalWorkspace : workspace.id === 'chords' ? ChordWorkspace : null
 
   useEffect(() => {
+    const stop = () => { midi.resetNotes(); input.panic() }
+    const visibility = () => { if (document.hidden) stop() }
+    window.addEventListener('blur', stop)
+    document.addEventListener('visibilitychange', visibility)
+    return () => {
+      window.removeEventListener('blur', stop)
+      document.removeEventListener('visibilitychange', visibility)
+      midi.disable()
+      input.panic()
+      void audio.dispose().catch(() => {})
+    }
+  }, [audio, input, midi])
+
+  useEffect(() => {
+    const available = workspace.keyboard?.mode === 'available'
+    input.setMidiPolicy(workspace.midi ?? { input: available, feedback: available })
     document.title = workspace.title + ' · SKEIN TheoryLab'
     if (initialWorkspace.current !== workspace.id) {
+      midi.resetNotes()
+      input.panic()
       main.current?.querySelector('h1')?.focus()
       window.scrollTo(0, 0)
       initialWorkspace.current = workspace.id
     }
-  }, [workspace])
+  }, [input, midi, workspace])
 
   return (
     <div className="shell">
       <Sidebar active={workspace.id} />
       <main className="main" ref={main}>
         <header className="topbar"><span>Workspace</span><span aria-hidden="true">/</span><strong>{workspace.title}</strong></header>
-        <div className="content">
-          {workspace.id === dashboard.id ? <Dashboard /> : <Placeholder workspace={workspace} />}
-        </div>
-        <KeyboardPanel access={workspace.keyboard ?? { mode: 'hidden' }} />
+        {Study ? <Study key={workspace.id} title={workspace.title} description={workspace.description} access={access} audio={audio} input={input} midi={midi} /> : (
+          <>
+            <div className="content">
+              {workspace.id === dashboard.id ? <Dashboard /> : <Placeholder workspace={workspace} />}
+            </div>
+            <KeyboardPanel key={workspace.id} access={access} audio={audio} input={input} midi={midi} />
+          </>
+        )}
       </main>
     </div>
   )

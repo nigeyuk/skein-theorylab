@@ -3,6 +3,7 @@ import {
   Music2, Piano, Settings2, Sigma, TrendingUp, Waypoints,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { MidiInputPolicy } from '../note-input'
 import type { KeyboardAccess } from '../visualisation/keyboard/model'
 
 export interface Workspace {
@@ -12,6 +13,7 @@ export interface Workspace {
   icon: LucideIcon
   color: string
   keyboard?: KeyboardAccess
+  midi?: MidiInputPolicy
 }
 
 export const dashboard: Workspace = {

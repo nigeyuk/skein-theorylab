@@ -1,7 +1,7 @@
 .keyboard-dock {
   position: sticky;
   bottom: 0;
-  z-index: 1;
+  z-index: 4;
   margin-top: auto;
   border-top: 1px solid var(--color-border);
   background: var(--color-chrome);
@@ -27,34 +27,73 @@
 .keyboard-dock[open] .keyboard-chevron { rotate: 180deg; }
 
 .keyboard-preview {
-  padding: 0 clamp(20px, 4vw, 55px) 18px;
+  max-height: 40dvh;
+  overflow: auto;
+  padding: 4px clamp(20px, 4vw, 55px) 14px;
   color: var(--color-muted);
 }
 
-.keyboard-keys {
-  display: flex;
-  max-width: 620px;
-  margin-top: 12px;
-  overflow: hidden;
-  border-radius: 5px;
-}
+.keyboard-controls, .keyboard-setting { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.keyboard-controls { column-gap: 14px; }
+.keyboard-setting { font-size: .8125rem; }
+.keyboard-setting input[type="range"] { width: 96px; }
+.keyboard-setting input { accent-color: var(--color-accent); }
+.keyboard-setting select { min-height: 30px; padding: 2px 5px; }
 
-.keyboard-octave { display: flex; flex: 1; }
+.keyboard-help { margin: 7px 0 2px; font-size: .8125rem; }
+.keyboard-scroll { overflow-x: auto; padding: 4px; margin: 0 -4px; }
+.keyboard-keys { display: flex; max-width: 1140px; }
+.keyboard-octave { position: relative; display: flex; flex: 1; min-width: 0; }
+
+.keyboard-key {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2px;
+  padding: 0 0 5px;
+  border-radius: 0 0 4px 4px;
+  font-size: clamp(.625rem, 1.25vw, .875rem);
+  line-height: 1.15;
+  cursor: pointer;
+  touch-action: pan-x;
+  user-select: none;
+}
 
 .keyboard-natural {
-  position: relative;
   flex: 1;
-  height: clamp(52px, 10vh, 92px);
+  min-width: 0;
+  height: clamp(68px, 12vh, 106px);
   border-right: 1px solid var(--color-piano-divider);
   background: var(--color-piano-natural);
+  color: var(--color-piano-accidental);
 }
 
-.keyboard-natural:not(:nth-child(3), :last-child)::after {
+.keyboard-accidental {
   position: absolute;
   z-index: 1;
-  inset: 0 -31% 36% auto;
-  width: 62%;
-  border-radius: 0 0 3px 3px;
+  top: 0;
+  width: 9%;
+  height: 62%;
+  transform: translateX(-50%);
+  border: 1px solid var(--color-border);
   background: var(--color-piano-accidental);
-  content: '';
+  color: var(--color-piano-natural);
 }
+
+.keyboard-key[data-highlighted] {
+  background: var(--tone-role, var(--color-module-blue));
+  color: var(--color-piano-accidental);
+}
+.keyboard-key[aria-pressed="true"] { background: var(--color-accent); color: var(--color-on-accent); }
+.keyboard-key:focus-visible { outline-offset: -3px; outline-color: var(--color-focus); box-shadow: inset 0 0 0 5px var(--color-piano-accidental); }
+.keyboard-accidental:focus-visible { z-index: 2; }
+.keyboard-key span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keyboard-key-role { font-size: .625rem; font-weight: 700; }
+
+.midi-controls {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 7px 10px;
+  padding-top: 8px; border-top: 1px solid var(--color-border); margin-top: 8px;
+}
+.midi-status { flex: 1 1 175px; font-size: .8125rem; }
+.midi-controls select { max-width: min(13rem, 57vw); }

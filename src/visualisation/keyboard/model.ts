@@ -1,4 +1,4 @@
-import type { NoteSpelling, Pitch } from '../../music-theory'
+import type { Note, Pitch } from '../../music-theory'
 
 export type KeyboardAccess =
   | { readonly mode: 'available' }
@@ -8,7 +8,7 @@ export type KeyboardAccess =
 export interface KeyboardKeyAnnotation {
   readonly pitch: Pitch
   readonly highlighted?: boolean
-  readonly spelling?: NoteSpelling
+  readonly spelling?: Note
   readonly scaleDegree?: string
   readonly chordToneRole?: string
 }

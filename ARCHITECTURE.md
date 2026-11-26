@@ -9,16 +9,16 @@
 | `src/reference/` | Reference presentation and discovery using the future content catalogue |
 | `src/exercise/` | Interprets validated exercise definitions using built-in question types, grading and feedback |
 | `src/learning/` | Learning records, mastery and progression rules |
-| `src/visualisation/` | Future notation, keyboard and other theory views |
+| `src/visualisation/` | Shared virtual keyboard and future notation and theory views |
 | `src/storage/` | Future persistence, schema versions and migration adapters |
-| `src/audio/` | Future browser audio and playback scheduling |
-| `src/midi/` | Future device discovery, permission handling and message translation |
+| `src/audio/` | Shared browser audio, voice scheduling and lifecycle |
+| `src/midi/` | Web MIDI permission, input discovery, connection lifecycle and message translation |
 
-The seven reserved module directories each contain a README defining their boundary. Add public entry points when working code needs them.
+Module READMEs define the boundaries of reserved and implemented subsystems. Add public entry points when working code needs them.
 
 ## Dependency direction
 
-The shell composes modules through their public interfaces. Reference, exercise, learning and visualisation can use the theory core. Browser I/O stays in storage, audio and MIDI adapters, with the shell responsible for wiring them into features. Domain logic should receive data or explicit interfaces from its caller. The theory core has a separate TypeScript check using only the ECMAScript standard library and no ambient package types. Keep its imports internal to the core.
+The shell composes modules through their public interfaces. Reference, exercise, learning and visualisation can use the theory core. Browser I/O stays in storage, audio and MIDI adapters, with the shell responsible for wiring them into features. The shared note-input manager coordinates live and programmatic sources and exposes subscriptions to workspace consumers. Domain logic should receive data or explicit interfaces from its caller. The theory core has a separate TypeScript check using only the ECMAScript standard library and no ambient package types. Keep its imports internal to the core.
 
 ## Platform choices
 
@@ -29,14 +29,23 @@ The shell composes modules through their public interfaces. Reference, exercise,
 - Phase 00 uses no persistent application data. The progress workspace describes the planned capability without rendering scores or completed activities.
 - TypeScript runs in strict mode. ESLint checks TypeScript and React hook usage. Vitest covers the route registry, resolver and public theory API.
 
-## Shared virtual keyboard
+## Shared virtual keyboard and audio
 
-The shell mounts the bottom dock from each workspace's keyboard access policy. Reference and Composition workspaces opt into the preview. Practice Room shows the disabled state until an exercise enables it. Dashboard, Learning Progress and Settings omit the dock. Exercise workspaces can supply available, disabled with a reason, or hidden. The shared panel has no dependency on a learning module or the navigation store.
+The shell creates one reusable Web Audio engine per application instance. The first playback gesture initialises or resumes its audio context. The engine accepts pitch-based note events, MIDI note numbers and frequencies in hertz. It schedules simultaneous or sequential frames on the audio clock. A triangle-wave voice uses attack and release ramps, and output is bounded by a 24-voice limit, per-voice gain, shared master volume, mute and compression. The contract can support a different instrument implementation without changing the workspaces.
 
-- `src/visualisation/keyboard/model.ts` defines inclusive octave bounds, optional labels and externally supplied pitch annotations for highlights, scale degrees and chord tone roles. Annotations describe the view without emitting note events. The Phase 00 dock renders a static, decorative preview and uses native disclosure for expansion.
-- `src/music-theory/index.ts` separates a written letter and accidental from a sounding pitch class and octave. Enharmonic spellings can share a sounding pitch. The audio layer will resolve pitch to frequency in hertz using the chosen tuning.
-- `src/note-input/index.ts` defines note-on and note-off events for pointer, computer keyboard, programmatic playback and future Web MIDI adapters. Each source assigns its own ID and maintains a press ID from attack to release. Adapters release outstanding presses when disconnected. The browser MIDI adapter will map device messages into this contract and keep Web MIDI types out of the core.
-- `src/audio/index.ts` defines the shared engine boundary. A future Web Audio implementation will own one lazily resumed audio context and allocate a voice per source and press pair, so two inputs can hold and release the same pitch independently. The shell will share that engine across workspaces and release affected voices when a workspace disallows input.
+- Each pointer, computer-key, physical MIDI or programmatic press has a source and press ID. The engine keeps independent voices for overlapping inputs, even when they share a pitch. It cancels pending starts and scheduled notes on source release or all-notes-off and disconnects ended voices. The shell stops playback when leaving a workspace or losing window focus.
+- The dock starts with three octaves and accepts octave bounds, note labels and external pitch annotations. An annotation can carry a written spelling, scale degree or chord tone role. Active piano input uses the application accent, while chord tone roles use separate educational colours.
+- Keyboard shortcuts are scoped to focused piano keys. Releasing keys, leaving the piano, losing pointer capture, collapsing the dock or hiding the page releases held voices. Keyboard availability is set by each workspace, with independent available, disabled and hidden states.
+- Intervals and Chords own their selection state and derive results and explanations from the theory core. The keyboard emits selected notes and accepts highlights keyed by sounding pitch, so spelling stays with the workspace even when enharmonic notes share a piano key.
+- The application sidebar renders its version from a static import of package metadata. Development phase names are tracked in the roadmap.
+
+### Unified input and Web MIDI
+
+The note-input manager tracks active presses by source and press ID and publishes note-on and note-off events with sounding pitch and velocity. MIDI events include the device and one-based channel. Pointer, computer-key and MIDI sources use the same live event path. Programmatic auditions go through the manager, which delegates precise scheduling to the audio clock and publishes corresponding UI events on the browser timer. Releasing one source preserves matching pitches from other sources.
+
+The MIDI adapter requests native input only when enabled by the user and never requests System Exclusive access. It keeps pedal and press state per channel and resets that state on disconnect, filter changes, disabling MIDI or panic. The storage adapter remembers an explicitly selected device ID. The dock displays port and permission status, supports a channel filter and can optionally follow the octaves of active MIDI notes.
+
+Learning workspaces subscribe to the manager independently of the keyboard view. Workspace or exercise policies can disable MIDI input or suppress MIDI-driven visual feedback while retaining note events for assessment. This interface also supports later interval, chord, scale and ear-training exercises, worksheet answers and notation entry. See the [manual MIDI acceptance test](src/midi/README.md).
 
 ## Music theory core
 

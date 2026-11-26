@@ -33,7 +33,7 @@ export interface Chord {
   readonly inversion: number
 }
 
-const qualities = Object.keys(formulas) as ChordQuality[]
+export const chordQualities: readonly ChordQuality[] = Object.freeze(Object.keys(formulas) as ChordQuality[])
 
 export function chordFormula(quality: ChordQuality): readonly Interval[] {
   if (!Object.hasOwn(formulas, quality)) throw new RangeError('Unknown chord quality')
@@ -82,7 +82,7 @@ export function identifyChords(notes: readonly Note[], options: ChordIdentificat
   const results: ChordMatch[] = []
   for (const { letter, accidental } of byIdentity.values()) {
     const root = { letter, accidental }
-    for (const quality of qualities) {
+    for (const quality of chordQualities) {
       if (formulas[quality].length !== byIdentity.size) continue
       const chord = buildChord(root, quality)
       if (chord.tones.every((tone) => byIdentity.has(identity(tone)))) {
@@ -116,7 +116,7 @@ export function diatonicChords(tonic: Note, kind: ScaleKind, size: ChordSize = 3
       scaleDegrees.push(target.degree)
       formula.push(intervalFromDistance(2 * tone + 1, target.halfSteps + 12 * Math.floor(position / 7) - halfSteps))
     }
-    const quality = qualities.find((candidate) => formulas[candidate].length === size
+    const quality = chordQualities.find((candidate) => formulas[candidate].length === size
       && formula.every((interval, i) => interval.halfSteps === formulas[candidate][i])) ?? null
     return [{ ...assembleChord(note, formula, quality, 0), degree, scaleDegrees }]
   })

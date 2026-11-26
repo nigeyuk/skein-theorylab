@@ -1,18 +1,39 @@
+import type { Pitch } from '../music-theory'
 import type { NoteOff, NoteOn } from '../note-input'
 
-/** Sound frequency in cycles per second, resolved by the audio layer. */
+export { createAudioEngine } from './web-audio'
+
+/** Sound frequency in cycles per second. */
 export interface AudioFrequency {
   readonly hertz: number
 }
 
-/** Shared playback contract for the future Web Audio API implementation. */
+export interface AudioSettings {
+  readonly volume: number
+  readonly muted: boolean
+}
+
+export interface PlaybackFrame {
+  readonly pitches: readonly Pitch[]
+  readonly offset: number
+  readonly duration: number
+}
+
+type VoiceAddress = Pick<NoteOn, 'sourceId' | 'pressId' | 'velocity'>
+
 export interface AudioEngine {
-  /** Initialise or resume from a user gesture. Repeated calls are safe. */
   resume(): Promise<void>
-  /** Allocate a voice for this source and press pair. */
-  noteOn(note: NoteOn): void
-  /** Release the voice for this source and press pair. */
+  noteOn(note: NoteOn): Promise<void>
+  noteOnMidi(note: VoiceAddress, midi: number): Promise<void>
+  noteOnFrequency(note: VoiceAddress, frequency: AudioFrequency): Promise<void>
   noteOff(note: NoteOff): void
-  /** Release every held voice from a disconnected or disabled input. */
+  /** Schedule overlapping or sequential frames. Replaces previous playback from this source. */
+  play(sourceId: string, frames: readonly PlaybackFrame[]): Promise<void>
   releaseSource(sourceId: string): void
+  allNotesOff(): void
+  getSettings(): AudioSettings
+  setSettings(settings: Partial<AudioSettings>): void
+  subscribe(listener: () => void): () => void
+  /** Release audio resources. A later user gesture may create a fresh context. */
+  dispose(): Promise<void>
 }

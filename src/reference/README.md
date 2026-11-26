@@ -1,5 +1,5 @@
 # Reference
 
-Owns reference content, metadata and indexing. Theory concepts come from the music theory core.
+Owns reference presentation and discovery using the future content catalogue. Theory concepts come from the music theory core.
 
-Phase 00 reserves this module boundary.
+Phase 02 provides interactive Intervals and Chords workspaces. Their calculations and explanations use the same public theory APIs available to later reference modules.

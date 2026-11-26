@@ -7,7 +7,7 @@ Import from the `src/music-theory` entry point. The core uses ECMAScript only an
 | Pitch | `parseNote`, `formatNote`, `pitchClassOf`, `toPitch`, `toMidi`, `fromMidi`, `frequencyOf`, `enharmonicallyEquivalent` |
 | Intervals | `stepHalfSteps`, `makeInterval`, `measureInterval`, `transpose`, `invertInterval` |
 | Scales | `buildScale`, `keySignature` |
-| Chords | `chordFormula`, `buildChord`, `identifyChords`, `diatonicChords`, `identifyDiatonicChords`, `formatRomanNumeral` |
+| Chords | `chordQualities`, `chordFormula`, `buildChord`, `identifyChords`, `diatonicChords`, `identifyDiatonicChords`, `formatRomanNumeral` |
 | Harmony | `classifyHarmonicFunction` |
 | Explanations | `explainInterval`, `explainScale`, `explainChord`, `explainDiatonicChord`, `explainHarmonicFunction` |
 
