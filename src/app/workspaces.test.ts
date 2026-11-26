@@ -3,13 +3,13 @@ import { dashboard, resolveWorkspace, workspaceGroups } from './workspaces'
 
 const workspaces = [dashboard, ...workspaceGroups.flatMap(({ workspaces }) => workspaces)]
 const routes = [
-  'dashboard', 'cheat-sheets', 'fundamentals', 'scales-modes', 'intervals', 'chords',
+  'dashboard', 'content-manager', 'cheat-sheets', 'fundamentals', 'scales-modes', 'intervals', 'chords',
   'harmonic-function', 'circle-of-fifths', 'counterpoint', 'composition',
   'practice-room', 'learning-progress', 'settings',
 ]
 
 describe('workspace routing', () => {
-  it('registers each Phase 00 workspace exactly once', () => {
+  it('registers each workspace exactly once', () => {
     expect(workspaces.map(({ id }) => id)).toEqual(routes)
   })
 

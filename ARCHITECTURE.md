@@ -6,11 +6,13 @@
 | --- | --- |
 | `src/app/` | React shell, route registry, navigation store, dashboard and reusable interface components |
 | `src/music-theory/` | Pure pitch, interval, scale, chord, harmony and explanation operations, with an entry point intended for eventual reuse by SKEIN Score |
-| `src/reference/` | Reference presentation and discovery using the future content catalogue |
+| `src/reference/` | Reference presentation and discovery using the validated content catalogue |
 | `src/exercise/` | Interprets validated exercise definitions using built-in question types, grading and feedback |
 | `src/learning/` | Learning records, mastery and progression rules |
 | `src/visualisation/` | Shared virtual keyboard and future notation and theory views |
-| `src/storage/` | Future persistence, schema versions and migration adapters |
+| `src/content/` | Content schemas, library operations, pack validation and repository contracts |
+| `src/content-manager/` | Library workspace, import previews, metadata forms and safe document viewers |
+| `src/storage/` | Browser persistence adapters, including IndexedDB for content |
 | `src/audio/` | Shared browser audio, voice scheduling and lifecycle |
 | `src/midi/` | Web MIDI permission, input discovery, connection lifecycle and message translation |
 
@@ -61,42 +63,39 @@ The isolated core TypeScript config uses the ECMAScript library and no ambient t
 
 See the [public API and conventions](src/music-theory/README.md).
 
-## Content Engine and Content Manager (planned)
+## Content Engine and Content Manager
 
-Supported content can be added, updated or removed at runtime without source edits or recompilation. Adding a new renderer or exercise behaviour requires an application release. The library supports PDF references, worksheets and answer sheets, Markdown lessons, structured question banks, interactive exercise definitions, images and diagrams, audio and MIDI examples, and bundled content packs. Worksheets may link to answer sheets, and lessons or exercises may reference shared assets by resource ID.
+Supported resources are added, updated and removed at runtime. The React Content Manager calls the Content Engine for imports, updates, search, filters, favourites and exports. The engine validates records and works against an asynchronous `ContentRepository` contract. The IndexedDB adapter stores records, favourite flags and binary assets and applies changes atomically. Browser profiles and origins have separate libraries. Clearing site data removes the local library, so export packs for recovery.
 
-- **Content Engine** owns schemas, migrations, resource identity and provenance, catalogue queries, import and export, validation, duplicate detection and update rules. It exposes validated records and asset references through a public interface. Storage adapters provide durable local metadata and binary storage behind that interface, with IndexedDB as the proposed browser backend. The theory core remains independent of content, persistence and UI.
-- **Content Manager** is the application workspace for browsing and filtering the library, previewing imports, resolving conflicts, updating or removing resources, exporting packs, and backing up or restoring the library. It calls the engine for these operations. Reference and exercise workspaces consume the same validated catalogue. The learning module owns progress and associates it with persistent resource and question IDs.
+The version 1 resource schema records stable IDs, type, title, description, subject, category, tags, author, attribution, licence, timestamps, revision, owner ID, visibility, workflow status, file descriptors, related IDs, optional prerequisites and difficulty. PDF documents can be classified as references, worksheets or answer sheets. Markdown, PNG, JPEG and declarative short-answer and multiple-choice exercise definitions are supported. Audio, MIDI, MusicXML and SKEIN Score identifiers are reserved for later renderers. Learning workspaces can consume the same repository contract as they gain content integration.
 
-### Proposed .skeinpack format
+### .skeinpack version 1
 
-A `.skeinpack` is a ZIP archive with a UTF-8 JSON manifest at `manifest.json` and relative entries for documents, structured data and assets. The initial format proposal is version 1.
+A pack is a ZIP archive with a UTF-8 JSON `manifest.json` and payload entries at `files/<sha256>`. The manifest contains `formatVersion`, `packId`, `packRevision`, `title`, `kind`, `resources` and `files`. File entries record path, media type, byte size and SHA-256 digest. Each resource has its own schema version and content revision. Exports share one resource, a selected collection or the current library. Library exports include favourites. Packs restore by previewing and merging into the current library. Split larger libraries into selected collections when they exceed the single-pack limits. Related resources outside a selected export must be exported separately or included in the collection.
 
-| Manifest field | Purpose |
-| --- | --- |
-| `formatVersion` | Archive and manifest contract version |
-| `packId`, `packRevision` | Persistent pack identity and ordered release revision |
-| `title`, `description`, `categories`, `tags` | Pack metadata used for display, browsing and filtering |
-| `resources[]` | Entries with a persistent resource ID, content type, resource schema version, revision, title, categories, tags and references to related resources and files |
-| `files[]` | Archive paths, allowed media types, byte sizes and SHA-256 digests for payload integrity and duplicate detection |
-
-Pack format, resource schema and content revision evolve independently. The engine validates supported versions and migrates recognised older schemas before committing an import. Unsupported versions produce an actionable error. Digests detect matching bytes and integrity errors. Trust and provenance are assigned by the application, independently of manifest metadata.
-
-### Identity, updates and recovery
-
-Resource and question identifiers are opaque, globally unique and preserved across edits, path changes, exports and restores. An intentional replacement with a different learning objective receives a new ID. Stable IDs with known provenance and a newer revision are update candidates. An identical ID, revision and payload is a repeat import. Identical payloads under different IDs can be flagged or stored once while retaining distinct resource identities. Conflicting revisions or provenance require explicit resolution. Users preview validation issues and changes before an atomic import or update is committed.
-
-Bundled resources occupy an application-managed, read-only catalogue. Imported resources occupy a separate writable catalogue with explicit provenance. Imports cannot overwrite or silently shadow bundled resources. The application may update its bundled catalogue through its own trusted distribution path.
-
-Progress is stored separately from content and linked by persistent IDs. Recorded attempts retain the revision used. Compatible updates preserve progress. When questions are removed or their meaning changes, retain historical records and require an explicit mapping or a new ID for future activity. Removing content keeps its progress history so reimporting the same resource can restore the association.
-
-Pack export shares selected declarative resources and their dependencies. A separate versioned library backup includes user resources, assets, metadata, provenance and linked progress, plus references to bundled resources. Restore stages and validates the backup, checks for missing references and ID conflicts, and applies accepted changes atomically. Failed imports or restores leave the prior library intact.
+Stable resource and asset IDs survive compatible edits and file replacement. Import previews classify new resources, duplicates, newer revisions and conflicts. Applying a newer revision is opt-in. Older and divergent revisions are skipped. Local favourite state survives updates. Provenance distinguishes imported and bundled resources and protects bundled entries from import replacement. Phase 03A ships with an empty imported library. Future learning records should store the resource ID and revision and preserve question IDs across compatible updates. Library packs do not carry learning history or retain previous resource revisions.
 
 ### Untrusted content
 
-Treat all imported manifests and payloads as untrusted. Bound file counts, uncompressed sizes and expansion ratios. Reject unsafe or duplicate archive paths, traversal, symlinks, unsupported file types and malformed or mismatched payloads before persistence. Validate schemas, resource references and payload digests. Use safe or isolated media renderers, sanitise Markdown and diagram output, and keep embedded scripts, active document content and automatic remote requests disabled. Handle audio and MIDI examples through approved media and parsing adapters.
+The engine validates metadata, media signatures, strict exercise definitions, ZIP structure, CRC and payload digests before committing imports. It rejects unsafe paths, symlinks, duplicate entries, encryption, unsupported compression, and undeclared files. Limits include 48 MiB compressed and 64 MiB expanded, 128 resource files, 20 MiB per file, 1 MiB per text payload or manifest, and a 250× ZIP expansion ratio. SHA-256 verifies payload integrity. Publisher identity requires a separate trust mechanism.
 
-Packs are declarative. They cannot execute imported JavaScript, register custom code or supply executable grading logic. Interactive exercises select built-in behaviours from validated identifiers and provide only data and parameters.
+Markdown uses an allowlist of rendered elements with raw HTML and remote resources disabled. Imported images use locally created Blob URLs and bounded dimensions. PDFs are rendered to canvas through PDF.js with interactive annotations and XFA disabled. The print window receives raster pages generated by the application. The viewer supports PDFs up to 200 pages and prints up to 40 pages in one job. Packs and exercise definitions remain declarative with no imported script, plug-ins or custom grading code.
+
+### Phase 03B multi-user architecture
+
+Owner ID, visibility and workflow status are local catalogue metadata. A future server must authenticate the caller and enforce role, ownership and publication permissions on every query, mutation and asset request.
+
+| Role | Intended permissions |
+| --- | --- |
+| Administrator | Manage accounts and roles, moderate content and administer publication. |
+| Content author | Manage owned drafts, submit revisions for review and access authorised collections. |
+| Student | Read published resources, manage a private library and sync personal learning progress. |
+| Guest | Read resources explicitly published for public access. |
+
+The remote platform contract exposes the current profile, a repository adapter, a cursor-based progress synchronisation interface, and account export and deletion operations. The learning engine will define the progress records and merge rules. Authentication must establish a server-verified identity. A future service should pair content metadata with private object storage, enforce access on assets and downloads, synchronise progress by user and stable resource ID, and define account export, retention and deletion across database and storage. Phase 03A requires no backend or sign-in.
+
+- **PostgreSQL** provides relational constraints, transactions and row-level security for ownership and permissions. A self-managed deployment also needs identity, a service API, object storage and operating procedures. [PostgreSQL row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- **Supabase** provides hosted PostgreSQL, Auth and Storage. A Phase 03B evaluation should test database and bucket policies together, keep service credentials on the server, and compare operations, migration, regional hosting and account deletion needs. [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security) · [Supabase storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 
 ## SKEIN Score integration (planned)
 

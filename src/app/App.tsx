@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AudioWaveform, ChevronDown, Menu, MoveUpRight } from 'lucide-react'
 import { KeyboardPanel } from '../visualisation/keyboard/KeyboardPanel'
 import { createAudioEngine, sampleInstrument } from '../audio'
@@ -14,6 +14,7 @@ import { dashboard, workspaceGroups } from './workspaces'
 import type { Workspace } from './workspaces'
 
 const path = (id: string) => '#/' + id
+const ContentManager = lazy(() => import('../content-manager/ContentManager'))
 const acousticGrand = sampleInstrument({
   id: 'acoustic-grand',
   label: 'Acoustic grand piano',
@@ -180,7 +181,9 @@ export function App() {
         {Study ? <Study key={workspace.id} title={workspace.title} description={workspace.description} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} /> : (
           <>
             <div className="content">
-              {workspace.id === dashboard.id ? <Dashboard /> : <Placeholder workspace={workspace} />}
+              {workspace.id === dashboard.id ? <Dashboard /> : workspace.id === 'content-manager' ? (
+                <Suspense fallback={<h1 id="workspace-title" tabIndex={-1}>Content Manager</h1>}><ContentManager /></Suspense>
+              ) : <Placeholder workspace={workspace} />}
             </div>
             <KeyboardPanel key={workspace.id} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} />
           </>

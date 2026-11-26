@@ -1,5 +1,5 @@
 import {
-  AudioLines, BookOpen, Circle, Guitar, Layers3, LayoutGrid, ListMusic,
+  AudioLines, BookOpen, Circle, Guitar, Layers3, LayoutGrid, LibraryBig, ListMusic,
   Music2, Piano, Settings2, Sigma, TrendingUp, Waypoints,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -22,10 +22,11 @@ export const dashboard: Workspace = {
 
 const keyboardAvailable = { mode: 'available' } satisfies KeyboardAccess
 
-export const workspaceGroups = [
+export const workspaceGroups: { title: string; workspaces: Workspace[] }[] = [
   {
     title: 'Reference',
     workspaces: [
+      { id: 'content-manager', title: 'Content Manager', description: 'Import, organise and preview learning resources and content packs.', icon: LibraryBig, color: 'accent' },
       { id: 'cheat-sheets', title: 'Cheat sheets', description: 'Quick reference for the notation, patterns and formulas you use most.', icon: BookOpen, color: 'accent', keyboard: keyboardAvailable },
       { id: 'fundamentals', title: 'Musical fundamentals', description: 'Start with pitch, rhythm, notation and the building blocks of music.', icon: Music2, color: 'blue', keyboard: keyboardAvailable },
       { id: 'scales-modes', title: 'Scales and modes', description: 'Explore scale patterns, key signatures and modal relationships.', icon: Piano, color: 'mint', keyboard: keyboardAvailable },
@@ -50,7 +51,7 @@ export const workspaceGroups = [
       { id: 'settings', title: 'Settings', description: 'Application preferences will be available here as features are added.', icon: Settings2, color: 'blue' },
     ],
   },
-] satisfies { title: string; workspaces: Workspace[] }[]
+]
 
 const workspaces = [dashboard, ...workspaceGroups.flatMap((group) => group.workspaces)]
 
