@@ -5,6 +5,7 @@ import { AppVersion } from '../src/app/AppVersion'
 import { createAudioEngine } from '../src/audio'
 import { createNoteInputManager } from '../src/note-input'
 import { createMidiInput } from '../src/midi'
+import { createKeyboardPreferences } from '../src/storage/keyboard-preferences'
 import { KeyboardPanel } from '../src/visualisation/keyboard/KeyboardPanel'
 import { fromMidi, parseNote, toPitch } from '../src/music-theory'
 import { chordStudy, describeInterval, intervalStudy, stepDistance } from '../src/reference/interactive/calculations'
@@ -52,12 +53,13 @@ describe('virtual keyboard', () => {
     const audio = createAudioEngine()
     const input = createNoteInputManager(audio)
     const midi = createMidiInput({ emit: () => {} })
+    const preferences = createKeyboardPreferences()
     const study = chordStudy(parseNote('Gb4'), 'major', 0)
-    const html = renderToStaticMarkup(<KeyboardPanel access={{ mode: 'available' }} audio={audio} input={input} midi={midi} annotations={study.annotations} initiallyOpen />)
+    const html = renderToStaticMarkup(<KeyboardPanel access={{ mode: 'available' }} audio={audio} input={input} midi={midi} preferences={preferences} annotations={study.annotations} initiallyOpen />)
     expect(html).toContain('aria-label="G♭4, Root, highlighted"')
     expect(html).toContain('data-role="Third"')
-    expect(renderToStaticMarkup(<KeyboardPanel audio={audio} input={input} midi={midi} access={{ mode: 'hidden' }} />)).toBe('')
-    const disabled = renderToStaticMarkup(<KeyboardPanel audio={audio} input={input} midi={midi} access={{ mode: 'disabled', reason: 'Exercise restriction' }} initiallyOpen />)
+    expect(renderToStaticMarkup(<KeyboardPanel audio={audio} input={input} midi={midi} preferences={preferences} access={{ mode: 'hidden' }} />)).toBe('')
+    const disabled = renderToStaticMarkup(<KeyboardPanel audio={audio} input={input} midi={midi} preferences={preferences} access={{ mode: 'disabled', reason: 'Exercise restriction' }} initiallyOpen />)
     expect(disabled).toContain('Exercise restriction')
     expect(disabled).not.toContain('aria-label="Piano keys"')
   })

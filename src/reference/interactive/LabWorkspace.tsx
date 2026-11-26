@@ -5,6 +5,7 @@ import type { AudioEngine, PlaybackFrame } from '../../audio'
 import type { Note } from '../../music-theory'
 import type { MidiInput } from '../../midi'
 import type { NoteInputManager } from '../../note-input'
+import type { KeyboardPreferences } from '../../storage/keyboard-preferences'
 import { noteForPitch } from '../../visualisation/keyboard/piano-keys'
 import { KeyboardPanel } from '../../visualisation/keyboard/KeyboardPanel'
 import type { KeyboardAccess, KeyboardKeyAnnotation } from '../../visualisation/keyboard/model'
@@ -17,6 +18,7 @@ export interface InteractiveWorkspaceProps {
   readonly audio: AudioEngine
   readonly input: NoteInputManager
   readonly midi: MidiInput
+  readonly preferences: KeyboardPreferences
 }
 
 interface LabWorkspaceProps extends InteractiveWorkspaceProps {
@@ -25,7 +27,7 @@ interface LabWorkspaceProps extends InteractiveWorkspaceProps {
   readonly children: ReactNode
 }
 
-export function LabWorkspace({ title, description, access, audio, input, midi, annotations, onNote, children }: LabWorkspaceProps) {
+export function LabWorkspace({ title, description, access, audio, input, midi, preferences, annotations, onNote, children }: LabWorkspaceProps) {
   useEffect(() => input.subscribeNotes((event) => {
     if (event.type === 'note-on' && event.origin?.kind === 'midi' && input.getMidiPolicy().feedback) {
       onNote(noteForPitch(event.pitch))
@@ -43,7 +45,7 @@ export function LabWorkspace({ title, description, access, audio, input, midi, a
           {children}
         </section>
       </div>
-      <KeyboardPanel access={access} audio={audio} input={input} midi={midi} annotations={annotations} onNote={onNote} initiallyOpen />
+      <KeyboardPanel access={access} audio={audio} input={input} midi={midi} preferences={preferences} annotations={annotations} onNote={onNote} initiallyOpen />
     </>
   )
 }

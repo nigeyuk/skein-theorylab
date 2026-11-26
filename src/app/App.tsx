@@ -4,7 +4,7 @@ import { KeyboardPanel } from '../visualisation/keyboard/KeyboardPanel'
 import { createAudioEngine } from '../audio'
 import { browserMidiRequest, createMidiInput } from '../midi'
 import { createNoteInputManager } from '../note-input'
-import { midiPreferences } from '../storage/midi-preferences'
+import { createKeyboardPreferences } from '../storage/keyboard-preferences'
 import { ChordWorkspace } from '../reference/interactive/ChordWorkspace'
 import { IntervalWorkspace } from '../reference/interactive/IntervalWorkspace'
 import type { KeyboardAccess } from '../visualisation/keyboard/model'
@@ -108,20 +108,29 @@ export function App() {
   const workspace = useNavigation((state) => state.workspace)
   const initialWorkspace = useRef(workspace.id)
   const main = useRef<HTMLElement>(null)
-  const [{ audio, input, midi }] = useState(() => {
+  const [{ audio, input, midi, keyboardPreferences }] = useState(() => {
+    const keyboardPreferences = createKeyboardPreferences()
+    const saved = keyboardPreferences.getState()
     const audio = createAudioEngine()
+    audio.setSettings({ volume: saved.volume, muted: saved.muted })
     const input = createNoteInputManager(audio)
     const midi = createMidiInput({
       requestAccess: browserMidiRequest(),
-      preferences: midiPreferences,
+      preferences: {
+        load: () => keyboardPreferences.getState().midiDeviceId,
+        save: (midiDeviceId) => keyboardPreferences.update({ midiDeviceId }),
+      },
       emit: (event) => { void input.dispatch(event).catch(() => {}) },
     })
-    return { audio, input, midi }
+    midi.setChannel(saved.midiChannel)
+    return { audio, input, midi, keyboardPreferences }
   })
   const access: KeyboardAccess = workspace.keyboard ?? { mode: 'hidden' }
   const Study = workspace.id === 'intervals' ? IntervalWorkspace : workspace.id === 'chords' ? ChordWorkspace : null
 
   useEffect(() => {
+    const unsubscribeAudio = audio.subscribe(() => keyboardPreferences.update(audio.getSettings()))
+    const unsubscribeMidi = midi.subscribe(() => keyboardPreferences.update({ midiChannel: midi.getState().channel }))
     const stop = () => { midi.resetNotes(); input.panic() }
     const visibility = () => { if (document.hidden) stop() }
     window.addEventListener('blur', stop)
@@ -129,11 +138,13 @@ export function App() {
     return () => {
       window.removeEventListener('blur', stop)
       document.removeEventListener('visibilitychange', visibility)
+      unsubscribeAudio()
+      unsubscribeMidi()
       midi.disable()
       input.panic()
       void audio.dispose().catch(() => {})
     }
-  }, [audio, input, midi])
+  }, [audio, input, keyboardPreferences, midi])
 
   useEffect(() => {
     const available = workspace.keyboard?.mode === 'available'
@@ -153,12 +164,12 @@ export function App() {
       <Sidebar active={workspace.id} />
       <main className="main" ref={main}>
         <header className="topbar"><span>Workspace</span><span aria-hidden="true">/</span><strong>{workspace.title}</strong></header>
-        {Study ? <Study key={workspace.id} title={workspace.title} description={workspace.description} access={access} audio={audio} input={input} midi={midi} /> : (
+        {Study ? <Study key={workspace.id} title={workspace.title} description={workspace.description} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} /> : (
           <>
             <div className="content">
               {workspace.id === dashboard.id ? <Dashboard /> : <Placeholder workspace={workspace} />}
             </div>
-            <KeyboardPanel key={workspace.id} access={access} audio={audio} input={input} midi={midi} />
+            <KeyboardPanel key={workspace.id} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} />
           </>
         )}
       </main>
