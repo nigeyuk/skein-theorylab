@@ -15,7 +15,7 @@ export interface Workspace {
 }
 
 export const dashboard: Workspace = {
-  id: 'dashboard', title: 'Dashboard', description: '', icon: LayoutGrid, color: 'violet',
+  id: 'dashboard', title: 'Dashboard', description: '', icon: LayoutGrid, color: 'accent',
 }
 
 const keyboardAvailable = { mode: 'available' } satisfies KeyboardAccess
@@ -24,7 +24,7 @@ export const workspaceGroups = [
   {
     title: 'Reference',
     workspaces: [
-      { id: 'cheat-sheets', title: 'Cheat sheets', description: 'Quick reference for the notation, patterns and formulas you use most.', icon: BookOpen, color: 'violet', keyboard: keyboardAvailable },
+      { id: 'cheat-sheets', title: 'Cheat sheets', description: 'Quick reference for the notation, patterns and formulas you use most.', icon: BookOpen, color: 'accent', keyboard: keyboardAvailable },
       { id: 'fundamentals', title: 'Musical fundamentals', description: 'Start with pitch, rhythm, notation and the building blocks of music.', icon: Music2, color: 'blue', keyboard: keyboardAvailable },
       { id: 'scales-modes', title: 'Scales and modes', description: 'Explore scale patterns, key signatures and modal relationships.', icon: Piano, color: 'mint', keyboard: keyboardAvailable },
       { id: 'intervals', title: 'Intervals', description: 'Understand the distance between notes and how intervals are named.', icon: AudioLines, color: 'amber', keyboard: keyboardAvailable },
@@ -38,7 +38,7 @@ export const workspaceGroups = [
     title: 'Studio',
     workspaces: [
       { id: 'composition', title: 'Composition', description: 'Explore a future workspace for developing musical ideas.', icon: Guitar, color: 'pink', keyboard: keyboardAvailable },
-      { id: 'practice-room', title: 'Practice room', description: 'Build fluency with targeted theory exercises as they become available.', icon: Sigma, color: 'violet', keyboard: { mode: 'disabled', reason: 'The keyboard will be available when a practice activity enables it.' } },
+      { id: 'practice-room', title: 'Practice room', description: 'Build fluency with targeted theory exercises as they become available.', icon: Sigma, color: 'accent', keyboard: { mode: 'disabled', reason: 'The keyboard will be available when a practice activity enables it.' } },
     ],
   },
   {
