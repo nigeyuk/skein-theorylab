@@ -2,16 +2,17 @@
 
 /* Shared SKEIN tokens. Additional themes can override these roles at the root. */
 @theme static {
-  --color-canvas: #181818;
-  --color-chrome: #202020;
-  --color-panel: #262626;
-  --color-elevated: #303030;
-  --color-border: #383838;
-  --color-accent: #FF8C32;
-  --color-accent-hover: #FFA557;
-  --color-on-accent: #181818;
-  --color-primary: #F4F4F4;
-  --color-muted: #A0A0A0;
+  --color-canvas: #151515;
+  --color-chrome: #1C1C1C;
+  --color-panel: #242424;
+  --color-elevated: #2C2C2C;
+  --color-selected: #333333;
+  --color-border: #3D3D3D;
+  --color-accent: #FF7800;
+  --color-accent-hover: #FF952E;
+  --color-on-accent: #151515;
+  --color-primary: #F2F2F2;
+  --color-muted: #ADADAD;
   --color-focus: var(--color-accent);
 
   /* Module and notation colours are independent of the application accent. */
@@ -53,7 +54,7 @@ h1:focus { outline: none; }
   border: 1px solid transparent; border-radius: 8px; color: var(--color-muted); font-size: .875rem;
 }
 .nav-link:hover { color: var(--color-primary); background: var(--color-elevated); }
-.nav-link[aria-current="page"] { color: var(--color-accent); background: var(--color-elevated); border-color: var(--color-accent); }
+.nav-link[aria-current="page"] { color: var(--color-accent); background: var(--color-selected); border-color: var(--color-accent); }
 .nav-group { margin-top: 16px; }
 .nav-group > p { padding: 0 10px 5px; color: var(--color-muted); font-size: .75rem; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; }
 .sidebar-footer { display: flex; align-items: center; gap: 8px; padding: 14px 9px 0; margin-top: auto; color: var(--color-accent); font-size: .8rem; }
@@ -75,9 +76,8 @@ h1:focus { outline: none; }
 .hero p { color: var(--color-muted); margin-top: 18px; max-width: 370px; line-height: 1.55; }
 .hero-art {
   position: absolute; z-index: -1; right: -35px; top: 18%; width: 43%; height: 68%;
-  transform: rotate(-13deg); opacity: .43; color: var(--color-accent);
-  background: repeating-linear-gradient(to bottom, color-mix(in srgb, currentColor 45%, transparent) 0 1px, transparent 1px 24px) center / 100% 97px no-repeat;
-  mask-image: linear-gradient(90deg, transparent, var(--color-primary) 22%);
+  transform: rotate(-13deg); opacity: .4; color: var(--color-muted);
+  background: repeating-linear-gradient(to bottom, var(--color-border) 0 1px, transparent 1px 24px) center / 100% 97px no-repeat;
 }
 .hero-art span { position: absolute; font-size: clamp(3rem, 9vw, 8rem); line-height: 1; }
 .hero-art span:nth-child(1) { left: 10%; top: 38%; }
@@ -99,7 +99,7 @@ h1:focus { outline: none; }
 .module-card:hover { border-color: var(--color-accent-hover); background: var(--color-elevated); }
 .module-icon {
   display: grid; place-items: center; color: var(--module); width: 42px; height: 42px;
-  background: color-mix(in srgb, var(--module) 14%, transparent); border-radius: 10px;
+  background: var(--color-elevated); border-radius: 10px;
 }
 .card-arrow { position: absolute; right: 17px; top: 19px; color: var(--color-muted); }
 .module-card h3 { margin-top: 12px; font-weight: 650; }
@@ -132,16 +132,20 @@ h1:focus { outline: none; }
 .lab-button, .lab-select, .keyboard-setting select {
   border: 1px solid var(--color-border);
   border-radius: 7px;
-  background: var(--color-chrome);
+  background: var(--color-elevated);
 }
 .lab-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-height: 34px; padding: 5px 10px;
   color: var(--color-primary); font-size: .875rem; cursor: pointer;
 }
-.lab-button:hover:not(:disabled), .lab-button[aria-pressed="true"] {
-  border-color: var(--color-accent); background: var(--color-elevated); color: var(--color-accent);
+.lab-button:hover:not(:disabled) {
+  border-color: var(--color-accent-hover); color: var(--color-accent-hover);
 }
+.lab-button[aria-pressed="true"], .keyboard-dock[open] summary, .mobile-nav[open] summary {
+  background: var(--color-selected); color: var(--color-accent);
+}
+.lab-button[aria-pressed="true"] { border-color: var(--color-accent); }
 .lab-button.lab-primary { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-on-accent); font-weight: 650; }
 .lab-button.lab-primary:hover { background: var(--color-accent-hover); color: var(--color-on-accent); }
 .lab-button:disabled { opacity: .5; cursor: default; }
