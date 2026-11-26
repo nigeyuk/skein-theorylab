@@ -55,29 +55,31 @@ export function KeyboardPanel({ access, audio, input, midi, annotations = [], on
         <ChevronUp className="keyboard-chevron" size={18} aria-hidden="true" />
       </summary>
       {expanded && (
-        <div className="keyboard-preview">
+        <div className={access.mode === 'available' ? 'keyboard-preview keyboard-playable' : 'keyboard-preview'}>
           {access.mode === 'disabled' ? <p>{access.reason}</p> : (
             <>
-              <div className="keyboard-controls">
-                <div className="lab-button-row" role="group" aria-label="Keyboard octave range">
-                  <button className="lab-button" type="button" disabled={range.first === minKeyboardOctave} onClick={() => setRange(keyboardRange(range.first - 1, count))}>Octave −</button>
-                  <button className="lab-button" type="button" disabled={range.last === maxKeyboardOctave} onClick={() => setRange(keyboardRange(range.first + 1, count))}>Octave +</button>
-                  <label className="keyboard-setting">Octaves
-                    <select value={count} onChange={(event) => setRange(keyboardRange(range.first, Number(event.target.value)))}>
-                      {Array.from({ length: maxKeyboardOctave - minKeyboardOctave + 1 }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
-                    </select>
+              <div className="keyboard-toolbar">
+                <div className="keyboard-controls">
+                  <div className="lab-button-row" role="group" aria-label="Keyboard octave range">
+                    <button className="lab-button" type="button" disabled={range.first === minKeyboardOctave} onClick={() => setRange(keyboardRange(range.first - 1, count))}>Octave −</button>
+                    <button className="lab-button" type="button" disabled={range.last === maxKeyboardOctave} onClick={() => setRange(keyboardRange(range.first + 1, count))}>Octave +</button>
+                    <label className="keyboard-setting">Octaves
+                      <select value={count} onChange={(event) => setRange(keyboardRange(range.first, Number(event.target.value)))}>
+                        {Array.from({ length: maxKeyboardOctave - minKeyboardOctave + 1 }, (_, index) => <option key={index + 1}>{index + 1}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="keyboard-setting"><input type="checkbox" checked={showNoteLabels} onChange={(event) => setShowNoteLabels(event.target.checked)} /> Note labels</label>
+                  <label className="keyboard-setting">Volume
+                    <input type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={(event) => audio.setSettings({ volume: Number(event.target.value) / 100 })} />
                   </label>
+                  <button className="lab-button" type="button" aria-pressed={muted} onClick={() => audio.setSettings({ muted: !muted })}>
+                    <VolumeIcon size={16} aria-hidden="true" /> Mute
+                  </button>
+                  {(fitted.first !== range.first || fitted.last !== range.last) && <button className="lab-button" type="button" onClick={() => setRange(fitted)}>Show selection</button>}
                 </div>
-                <label className="keyboard-setting"><input type="checkbox" checked={showNoteLabels} onChange={(event) => setShowNoteLabels(event.target.checked)} /> Note labels</label>
-                <label className="keyboard-setting">Volume
-                  <input type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={(event) => audio.setSettings({ volume: Number(event.target.value) / 100 })} />
-                </label>
-                <button className="lab-button" type="button" aria-pressed={muted} onClick={() => audio.setSettings({ muted: !muted })}>
-                  <VolumeIcon size={16} aria-hidden="true" /> Mute
-                </button>
-                {(fitted.first !== range.first || fitted.last !== range.last) && <button className="lab-button" type="button" onClick={() => setRange(fitted)}>Show selection</button>}
+                <MidiControls midi={midi} input={input} audio={audio} />
               </div>
-              <MidiControls midi={midi} input={input} audio={audio} />
               <PianoKeys config={{ octaveRange: range, showNoteLabels, annotations }} noteInput={input} onNote={onNote} />
             </>
           )}

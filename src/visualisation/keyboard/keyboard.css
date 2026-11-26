@@ -1,4 +1,9 @@
 .keyboard-dock {
+  --piano-white-width: clamp(28px, 3vw, 34px);
+  --piano-white-height: clamp(140px, 19dvh, 172px);
+  --piano-black-width: calc(var(--piano-white-width) * 0.62);
+  --piano-black-height: calc(var(--piano-white-height) * 0.60);
+
   position: sticky;
   bottom: 0;
   z-index: 4;
@@ -27,11 +32,19 @@
 .keyboard-dock[open] .keyboard-chevron { rotate: 180deg; }
 
 .keyboard-preview {
-  max-height: 40dvh;
+  max-height: min(48dvh, 420px);
   overflow: auto;
   padding: 4px clamp(20px, 4vw, 55px) 14px;
   color: var(--color-muted);
 }
+
+.keyboard-playable {
+  display: grid;
+  grid-template: minmax(0, 1fr) auto auto / minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.keyboard-toolbar { min-height: 0; overflow: auto; padding: 4px; margin: -4px -4px 0; }
 
 .keyboard-controls, .keyboard-setting { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .keyboard-controls { column-gap: 14px; }
@@ -42,8 +55,8 @@
 
 .keyboard-help { margin: 7px 0 2px; font-size: .8125rem; }
 .keyboard-scroll { overflow-x: auto; padding: 4px; margin: 0 -4px; }
-.keyboard-keys { display: flex; max-width: 1140px; }
-.keyboard-octave { position: relative; display: flex; flex: 1; min-width: 0; }
+.keyboard-keys { display: flex; width: max-content; }
+.keyboard-octave { position: relative; display: flex; flex: none; }
 
 .keyboard-key {
   display: flex;
@@ -61,9 +74,9 @@
 }
 
 .keyboard-natural {
-  flex: 1;
-  min-width: 0;
-  height: clamp(68px, 12vh, 106px);
+  flex: none;
+  width: var(--piano-white-width);
+  height: var(--piano-white-height);
   border-right: 1px solid var(--color-piano-divider);
   background: var(--color-piano-natural);
   color: var(--color-piano-accidental);
@@ -73,9 +86,11 @@
   position: absolute;
   z-index: 1;
   top: 0;
-  width: 9%;
-  height: 62%;
+  width: var(--piano-black-width);
+  height: var(--piano-black-height);
   transform: translateX(-50%);
+  font-size: clamp(.5625rem, 1vw, .625rem);
+  letter-spacing: -.025em;
   border: 1px solid var(--color-border);
   background: var(--color-piano-accidental);
   color: var(--color-piano-natural);

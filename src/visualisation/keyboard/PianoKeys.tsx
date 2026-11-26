@@ -15,6 +15,7 @@ interface PianoKeysProps {
 }
 
 const playbackError = 'Audio could not start. Try pressing a key again.'
+const shortRoles: Readonly<Record<string, string>> = { Third: '3rd', Fifth: '5th', Seventh: '7th' }
 
 export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
   const { octaveRange, showNoteLabels, annotations } = config
@@ -115,7 +116,7 @@ export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
       <p className="keyboard-help" id={source}>Focus a piano key to play with Z–M or Q–U and the keys above them. Use arrow keys to move and Enter or Space to play the focused note.</p>
       {error && <p role="status">{error}</p>}
       <div className="keyboard-scroll" ref={root} role="group" aria-label="Piano keys" aria-describedby={source} onKeyDown={handleKey} onBlur={handleBlur}>
-        <div className="keyboard-keys" style={{ minWidth: keys.length / 12 * 112 }}>
+        <div className="keyboard-keys">
           {Array.from({ length: keys.length / 12 }, (_, octaveIndex) => (
             <div className="keyboard-octave" key={octaveRange.first + octaveIndex}>
               {keys.slice(octaveIndex * 12, (octaveIndex + 1) * 12).map((key, localIndex) => {
@@ -123,7 +124,7 @@ export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
                 const matches = keyAnnotations(key, annotations)
                 const spelling = matches.flatMap(({ spelling }) => spelling ? [formatNote(spelling, 'unicode')] : [])
                 const label = [...new Set(spelling)].join(' / ') || formatNote(key.note, 'unicode')
-                const roles = [...new Set(matches.flatMap(({ chordToneRole, scaleDegree }) => [chordToneRole, scaleDegree].filter(Boolean)))]
+                const roles = [...new Set(matches.flatMap(({ chordToneRole, scaleDegree }) => [chordToneRole, scaleDegree].filter((role): role is string => Boolean(role))))]
                 const active = sounding.has(pitchKey(key.pitch))
                 const highlighted = matches.some((annotation) => annotation.highlighted)
                 return (
@@ -151,7 +152,7 @@ export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
                     }}
                   >
                     {showNoteLabels && <span>{label}</span>}
-                    {roles.length > 0 && <span className="keyboard-key-role">{roles.join(' / ')}</span>}
+                    {roles.length > 0 && <span className="keyboard-key-role">{roles.map((role) => shortRoles[role] ?? role).join(' / ')}</span>}
                   </button>
                 )
               })}
