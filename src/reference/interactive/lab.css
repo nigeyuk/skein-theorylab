@@ -18,6 +18,7 @@
 .lab-panel legend { padding-inline: 5px; color: var(--color-muted); font-size: .875rem; }
 .lab-panel p { color: var(--color-muted); }
 .note-picker { display: grid; gap: 10px; }
+.note-picker-adjustments { display: grid; gap: 10px; }
 .note-picker-heading { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .note-picker output { color: var(--color-primary); font-size: 1.45rem; font-weight: 700; }
 .note-picker .lab-button-row > .lab-button { min-width: 34px; padding-inline: 7px; }
@@ -31,6 +32,14 @@
 .lab-facts dt { color: var(--color-muted); font-size: .8125rem; }
 .lab-facts dd { font-weight: 600; }
 .lab-explanation { margin-top: 16px; }
+.lab-explanation summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  list-style: none; cursor: pointer; font-size: 1.18rem; font-weight: 680;
+}
+.lab-explanation summary::-webkit-details-marker { display: none; }
+.lab-explanation summary:hover { color: var(--color-accent); }
+.lab-explanation[open] summary svg { rotate: 180deg; }
+.lab-explanation > p { margin-top: 4px; }
 .lab-explanation ol { list-style: decimal; margin: 8px 0 0 1.35rem; color: var(--color-muted); }
 .lab-explanation li + li { margin-top: 4px; }
 .lab-explanation .lab-formula { list-style: none; margin-left: 0; }
@@ -43,6 +52,46 @@
   border-radius: 7px; background: var(--color-chrome);
 }
 .lab-chord-tones span { color: var(--tone-role); font-size: .8125rem; }
+
+@media (min-width: 64rem) and (max-height: 68rem) {
+  .main--theory { --theory-gutter: clamp(20px, 3vw, 48px); }
+  .main--theory > .topbar { min-height: 46px; padding-inline: var(--theory-gutter); }
+  .main--theory > .content { max-width: 1600px; padding: 16px var(--theory-gutter); }
+  .lab-heading { margin-bottom: 12px; }
+  .lab-heading h1 { font-size: 2rem; }
+  .lab-heading p { margin-top: 4px; }
+  .lab-layout, .note-picker-grid { gap: 12px; }
+  .lab-inputs, .lab-result, .note-picker, .lab-voicing { gap: 8px; }
+  .lab-panel { padding: 10px 12px; }
+  .note-picker output { font-size: 1.25rem; }
+  .note-picker .lab-button-row { gap: 5px; }
+  .note-picker .lab-button-row > .lab-button { min-width: 30px; }
+  .note-picker-adjustments { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lab-select-label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lab-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr)); gap: 6px; }
+  .lab-facts > div { padding: 5px 8px; }
+  .lab-chord-tones { gap: 6px; }
+  .lab-chord-tones li { grid-template-columns: auto auto; align-items: baseline; gap: 5px; padding: 4px 8px; }
+  .lab-explanation { margin-top: 10px; }
+  .lab-explanation summary { font-size: 1rem; min-height: 24px; }
+
+  .main--theory .keyboard-dock > summary { min-height: 42px; padding: 6px var(--theory-gutter); }
+  .main--theory .keyboard-preview { padding-inline: var(--theory-gutter); }
+  .main--theory .keyboard-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+  .main--theory .instrument-controls { margin-top: 0; }
+  .main--theory .midi-controls { flex: 1 1 100%; margin-top: 0; padding-top: 6px; }
+  .main--theory .keyboard-help { margin-top: 4px; }
+}
+
+@media (max-height: 68rem) {
+  .main--theory > .keyboard-dock { position: static; }
+  .main--theory .keyboard-playable { max-height: none; overflow: visible; grid-template-rows: auto auto auto; }
+  .main--theory .keyboard-toolbar { overflow: visible; }
+}
+
+@media (min-width: 87.5rem) and (max-height: 68rem) {
+  .lab-layout--chords .lab-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
 
 @media (max-width: 1050px) {
   .lab-layout { grid-template-columns: minmax(0, 1fr); }

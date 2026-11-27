@@ -3,7 +3,7 @@ import { ArrowLeftRight } from 'lucide-react'
 import { enharmonicallyEquivalent, formatNote, parseNote } from '../../music-theory'
 import type { Note } from '../../music-theory'
 import { describeInterval, intervalStudy, stepDistance } from './calculations'
-import { LabWorkspace, PlaybackControls } from './LabWorkspace'
+import { LabExplanation, LabWorkspace, PlaybackControls } from './LabWorkspace'
 import type { InteractiveWorkspaceProps } from './LabWorkspace'
 import { NotePicker } from './NotePicker'
 
@@ -47,13 +47,12 @@ export function IntervalWorkspace(props: InteractiveWorkspaceProps) {
           ]} />
         </section>
       </div>
-      <section className="lab-panel lab-explanation" aria-labelledby="interval-explanation">
-        <h2 id="interval-explanation">How it’s measured</h2>
+      <LabExplanation title="How it’s measured">
         <ol>
           {letters?.kind === 'letter-count' && <li>{letters.text} {formatNote(first, 'unicode')} to {formatNote(second, 'unicode')} gives {letters.number}.</li>}
           {distance?.kind === 'chromatic-distance' && <li>{distance.text} The baseline is {distance.baseline} H and the measured distance is {distance.halfSteps} H, giving {name}.</li>}
         </ol>
-      </section>
+      </LabExplanation>
     </LabWorkspace>
   )
 }

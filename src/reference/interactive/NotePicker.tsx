@@ -36,15 +36,17 @@ export function NotePicker({ label, note, onChange, keyboardTarget, onKeyboardTa
           <button className="lab-button" key={letter} type="button" aria-pressed={letter === note.letter} onClick={() => onChange({ ...note, letter })}>{letter}</button>
         ))}
       </div>
-      <div className="lab-button-row" role="group" aria-label={label + ' accidental'}>
-        {accidentals.map(({ offset, symbol, label: name }) => (
-          <button className="lab-button" key={offset} type="button" aria-label={name} aria-pressed={offset === note.accidental} onClick={() => onChange({ ...note, accidental: offset })}>{symbol}</button>
-        ))}
-      </div>
-      <div className="lab-button-row" role="group" aria-label={label + ' octave'}>
-        <button className="lab-button" type="button" aria-label={'Lower ' + label.toLowerCase() + ' by an octave'} disabled={octave <= -1} onClick={() => onChange({ ...note, octave: octave - 1 })}>−</button>
-        <span>Octave {octave}</span>
-        <button className="lab-button" type="button" aria-label={'Raise ' + label.toLowerCase() + ' by an octave'} disabled={octave >= 9} onClick={() => onChange({ ...note, octave: octave + 1 })}>+</button>
+      <div className="note-picker-adjustments">
+        <div className="lab-button-row" role="group" aria-label={label + ' accidental'}>
+          {accidentals.map(({ offset, symbol, label: name }) => (
+            <button className="lab-button" key={offset} type="button" aria-label={name} aria-pressed={offset === note.accidental} onClick={() => onChange({ ...note, accidental: offset })}>{symbol}</button>
+          ))}
+        </div>
+        <div className="lab-button-row" role="group" aria-label={label + ' octave'}>
+          <button className="lab-button" type="button" aria-label={'Lower ' + label.toLowerCase() + ' by an octave'} disabled={octave <= -1} onClick={() => onChange({ ...note, octave: octave - 1 })}>−</button>
+          <span>Octave {octave}</span>
+          <button className="lab-button" type="button" aria-label={'Raise ' + label.toLowerCase() + ' by an octave'} disabled={octave >= 9} onClick={() => onChange({ ...note, octave: octave + 1 })}>+</button>
+        </div>
       </div>
     </fieldset>
   )

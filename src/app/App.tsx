@@ -180,7 +180,7 @@ export function App() {
   return (
     <div className="shell">
       <Sidebar active={workspace.id} />
-      <main className="main" ref={main}>
+      <main className={Study ? 'main main--theory' : 'main'} ref={main}>
         <header className="topbar"><span>Workspace</span><span aria-hidden="true">/</span><strong>{workspace.title}</strong></header>
         {Study ? <Study key={workspace.id} title={workspace.title} description={workspace.description} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} /> : (
           <>

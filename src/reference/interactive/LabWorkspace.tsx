@@ -1,6 +1,6 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
-import { Play, Square } from 'lucide-react'
+import { ChevronDown, Play, Square } from 'lucide-react'
 import type { AudioEngine, PlaybackFrame } from '../../audio'
 import type { Note } from '../../music-theory'
 import type { MidiInput } from '../../midi'
@@ -47,6 +47,30 @@ export function LabWorkspace({ title, description, access, audio, input, midi, p
       </div>
       <KeyboardPanel access={access} audio={audio} input={input} midi={midi} preferences={preferences} annotations={annotations} onNote={onNote} initiallyOpen />
     </>
+  )
+}
+
+// Match the compact desktop media query in lab.css for the initial disclosure state.
+const compactViewport = '(min-width: 64rem) and (max-height: 68rem)'
+
+function subscribeToCompactViewport(onChange: () => void) {
+  const query = window.matchMedia(compactViewport)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+export function LabExplanation({ title, children }: { title: string; children: ReactNode }) {
+  const compact = useSyncExternalStore(subscribeToCompactViewport, () => window.matchMedia(compactViewport).matches, () => false)
+  const [expanded, setExpanded] = useState<boolean | null>(null)
+  const open = expanded ?? !compact
+
+  return (
+    <details className="lab-panel lab-explanation" open={open}>
+      <summary onClick={(event) => { event.preventDefault(); setExpanded(!open) }}>
+        {title}<ChevronDown size={17} aria-hidden="true" />
+      </summary>
+      {children}
+    </details>
   )
 }
 

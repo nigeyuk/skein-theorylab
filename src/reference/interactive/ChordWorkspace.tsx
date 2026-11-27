@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { chordFormula, chordQualities, enharmonicallyEquivalent, formatNote, parseNote } from '../../music-theory'
 import type { ChordQuality, Note } from '../../music-theory'
 import { chordStudy, describeInterval, stepDistance } from './calculations'
-import { LabWorkspace, PlaybackControls } from './LabWorkspace'
+import { LabExplanation, LabWorkspace, PlaybackControls } from './LabWorkspace'
 import type { InteractiveWorkspaceProps } from './LabWorkspace'
 import { NotePicker } from './NotePicker'
 
@@ -24,7 +24,7 @@ export function ChordWorkspace(props: InteractiveWorkspaceProps) {
 
   return (
     <LabWorkspace {...props} annotations={annotations} onNote={selectFromKeyboard}>
-      <div className="lab-layout">
+      <div className="lab-layout lab-layout--chords">
         <div className="lab-inputs">
           <NotePicker label="Chord root" note={root} onChange={setRoot} />
           <fieldset className="lab-panel lab-voicing">
@@ -65,8 +65,7 @@ export function ChordWorkspace(props: InteractiveWorkspaceProps) {
           ]} />
         </section>
       </div>
-      <section className="lab-panel lab-explanation" aria-labelledby="chord-explanation">
-        <h2 id="chord-explanation">How it’s built</h2>
+      <LabExplanation title="How it’s built">
         <p>{steps[0]?.text}</p>
         <ol className="lab-formula">
           {steps.map(({ interval, tone, voicedTone }, index) => (
@@ -77,7 +76,7 @@ export function ChordWorkspace(props: InteractiveWorkspaceProps) {
             </li>
           ))}
         </ol>
-      </section>
+      </LabExplanation>
     </LabWorkspace>
   )
 }
