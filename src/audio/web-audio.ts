@@ -4,9 +4,9 @@ import type { AudioEngine, AudioSettings } from './index'
 import type { AudioInstrument, InstrumentDefinition, InstrumentPreferences, InstrumentVoice } from './instrument'
 import { createInstrumentManager } from './instrument-manager'
 import { createOutputLimiter } from './limiter'
+import { createOutputMeter } from './output-meter'
 
 const attack = 0.012
-const maxMasterGain = 0.8
 const scheduleLead = 0.02
 
 export interface AudioEngineOptions {
@@ -34,14 +34,15 @@ export function createAudioEngine(
   let context: AudioContext | undefined
   let output: GainNode | undefined
   let compressor: DynamicsCompressorNode | undefined
-  let limiter: WaveShaperNode | undefined
+  let limiter: ReturnType<typeof createOutputLimiter> | undefined
+  let meter: ReturnType<typeof createOutputMeter> | undefined
   let settings: AudioSettings = { volume: 0.65, muted: false }
   const listeners = new Set<() => void>()
   const held = new Map<string, { sourceId: string; instrument: AudioInstrument; voice: InstrumentVoice }>()
   const pending = new Map<string, VoiceAddress>()
   const playback = new Map<string, object>()
 
-  const outputLevel = () => settings.muted ? 0 : settings.volume * maxMasterGain
+  const outputLevel = () => settings.muted ? 0 : settings.volume ** 1.5
 
   async function resume() {
     if (!context) {
@@ -49,11 +50,16 @@ export function createAudioEngine(
       const nextOutput = nextContext.createGain()
       const nextCompressor = nextContext.createDynamicsCompressor()
       nextOutput.gain.value = outputLevel()
-      nextCompressor.threshold.value = -12
+      nextCompressor.threshold.value = -5
+      nextCompressor.knee.value = 2
+      nextCompressor.ratio.value = 8
+      nextCompressor.attack.value = 0.003
+      nextCompressor.release.value = 0.09
       nextOutput.connect(nextCompressor)
       const nextLimiter = createOutputLimiter(nextContext)
-      nextCompressor.connect(nextLimiter)
-      nextLimiter.connect(nextContext.destination)
+      nextCompressor.connect(nextLimiter.input)
+      nextLimiter.output.connect(nextContext.destination)
+      meter = createOutputMeter(nextContext, nextLimiter.output)
       limiter = nextLimiter
       context = nextContext
       output = nextOutput
@@ -105,6 +111,7 @@ export function createAudioEngine(
       options: instruments.options,
       getState: instruments.getState,
       subscribe: instruments.subscribe,
+      setGainDb: instruments.setGainDb,
       async select(id) {
         if (!instruments.options.some((option) => option.id === id)) throw new RangeError('Unknown instrument')
         allNotesOff()
@@ -150,6 +157,7 @@ export function createAudioEngine(
     releaseSource,
     allNotesOff,
     getSettings: () => settings,
+    readOutputPeaks: () => context?.state === 'running' && meter ? meter.read() : { left: 0, right: 0 },
     setSettings(next) {
       const updated = { volume: normalise(next.volume ?? settings.volume), muted: next.muted ?? settings.muted }
       if (settings.volume === updated.volume && settings.muted === updated.muted) return
@@ -167,7 +175,10 @@ export function createAudioEngine(
       context = undefined
       output?.disconnect()
       compressor?.disconnect()
-      limiter?.disconnect()
+      meter?.dispose()
+      limiter?.input.disconnect()
+      limiter?.output.disconnect()
+      meter = undefined
       limiter = undefined
       output = undefined
       compressor = undefined

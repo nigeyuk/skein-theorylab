@@ -8,7 +8,7 @@ export const oscillatorInstrument: InstrumentDefinition = {
     return {
       async load() {},
       ...createVoiceBank(context, output, {
-        attack: 0.012, release: 0.065, voiceGain: 0.05, maxPolyphony: 24, steal: false,
+        attack: 0.012, release: 0.065, voiceGain: 0.12, maxPolyphony: 24, steal: false,
         source({ hertz, start }) {
           const oscillator = context.createOscillator()
           oscillator.type = 'triangle'

@@ -32,6 +32,10 @@ function audioHarness(resumeGate: Promise<void> = Promise.resolve(), options?: P
   const buffers: (ReturnType<typeof oscillatorNode> & { buffer: AudioBuffer | null; playbackRate: ReturnType<typeof param> })[] = []
   const oscillators: ReturnType<typeof oscillatorNode>[] = []
   const gains: ReturnType<typeof gainNode>[] = []
+  const analyser = () => ({ fftSize: 0, getFloatTimeDomainData: vi.fn((samples: Float32Array) => samples.fill(0)), disconnect: vi.fn() })
+  const analysers: ReturnType<typeof analyser>[] = []
+  const splitter = { connect: vi.fn(), disconnect: vi.fn() }
+  const shaper = { curve: null as Float32Array | null, connect: vi.fn(), disconnect: vi.fn() }
   const context = {
     state: 'suspended',
     currentTime: 10,
@@ -52,13 +56,19 @@ function audioHarness(resumeGate: Promise<void> = Promise.resolve(), options?: P
       gains.push(node)
       return node
     }),
-    createWaveShaper: vi.fn(() => ({ curve: null, connect: vi.fn(), disconnect: vi.fn() })),
-    createDynamicsCompressor: vi.fn(() => ({ threshold: param(), connect: vi.fn(), disconnect: vi.fn() })),
+    createWaveShaper: vi.fn(() => shaper),
+    createDynamicsCompressor: vi.fn(() => ({ threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(), connect: vi.fn(), disconnect: vi.fn() })),
+    createChannelSplitter: vi.fn(() => splitter),
+    createAnalyser: vi.fn(() => {
+      const node = analyser()
+      analysers.push(node)
+      return node
+    }),
     resume: vi.fn(async () => { await resumeGate; context.state = 'running' }),
     close: vi.fn(async () => { context.state = 'closed' }),
   }
   const factory = vi.fn(() => context as unknown as AudioContext)
-  return { engine: createAudioEngine(factory, options), context, factory, oscillators, buffers, gains }
+  return { engine: createAudioEngine(factory, options), context, factory, oscillators, buffers, gains, analysers, splitter, shaper }
 }
 
 const note = (sourceId = 'piano', pressId = 'pointer', midi = 69): NoteOn => ({
@@ -77,12 +87,12 @@ describe('shared Web Audio engine', () => {
     await engine.resume()
     expect(factory).toHaveBeenCalledTimes(1)
     expect(context.resume).toHaveBeenCalledTimes(1)
-    expect(gains[0]?.gain.value).toBe(0.8)
+    expect(gains[0]?.gain.value).toBe(1)
     engine.setSettings({ muted: true })
     expect(gains[0]?.gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 10, 0.015)
     engine.setSettings({ volume: 0.5 })
     engine.setSettings({ muted: false })
-    expect(gains[0]?.gain.setTargetAtTime).toHaveBeenLastCalledWith(0.4, 10, 0.015)
+    expect(gains[0]?.gain.setTargetAtTime).toHaveBeenLastCalledWith(0.5 ** 1.5, 10, 0.015)
     expect(engine.getSettings()).toEqual({ volume: 0.5, muted: false })
     expect(listener).toHaveBeenCalledTimes(4)
     unsubscribe()
@@ -97,15 +107,37 @@ describe('shared Web Audio engine', () => {
     await Promise.all([engine.noteOn(first), engine.noteOnMidi(second, 69)])
     expect(oscillators).toHaveLength(2)
     expect(oscillators[0]?.frequency.setValueAtTime).toHaveBeenCalledWith(440, 10)
-    expect(gains[1]?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.05, 10.012)
+    expect(gains.at(-2)?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.12, 10.012)
     engine.noteOff(off(first))
     expect(oscillators[0]?.stop).toHaveBeenCalledWith(10.065)
     expect(oscillators[1]?.stop).not.toHaveBeenCalled()
     oscillators[0]?.onended?.()
     expect(oscillators[0]?.disconnect).toHaveBeenCalled()
-    expect(gains[1]?.disconnect).toHaveBeenCalled()
+    expect(gains.at(-2)?.disconnect).toHaveBeenCalled()
     engine.releaseSource('midi')
     expect(oscillators[1]?.stop).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves moderate peaks, reserves headroom above unity and meters the final stereo signal', async () => {
+    const { engine, gains, shaper, splitter, analysers, context } = audioHarness()
+    expect(engine.readOutputPeaks()).toEqual({ left: 0, right: 0 })
+    await engine.resume()
+    expect(gains[1]?.gain.value).toBe(0.25)
+    const curve = shaper.curve!
+    const midpoint = (curve.length - 1) / 2
+    expect(curve[midpoint + 512]).toBeCloseTo(0.5)
+    expect(curve[midpoint + 1024]).toBeLessThan(curve[midpoint + 2048]!)
+    expect(curve[0]).toBeCloseTo(-0.95)
+    expect(curve.at(-1)).toBeCloseTo(0.95)
+    expect(shaper.connect.mock.calls).toEqual([[context.destination], [splitter]])
+    expect(splitter.connect.mock.calls).toEqual([[analysers[0], 0], [analysers[1], 1]])
+    analysers[0]!.getFloatTimeDomainData.mockImplementation((samples) => samples.fill(-0.25))
+    analysers[1]!.getFloatTimeDomainData.mockImplementation((samples) => samples.fill(0.5))
+    expect(engine.readOutputPeaks()).toEqual({ left: 0.25, right: 0.5 })
+    await engine.dispose()
+    expect(shaper.disconnect).toHaveBeenCalledWith(splitter)
+    expect(splitter.disconnect).toHaveBeenCalledOnce()
+    expect(engine.readOutputPeaks()).toEqual({ left: 0, right: 0 })
   })
 
   it('cancels pending presses and audition when all notes are released during resume', async () => {
@@ -165,7 +197,7 @@ function servePiano() {
   })
 }
 
-function sampledHarness(fetchFile: typeof fetch, preferences?: { load(): string | null; save(id: string): void }) {
+function sampledHarness(fetchFile: typeof fetch, preferences?: NonNullable<Parameters<typeof createAudioEngine>[1]>['preferences']) {
   return audioHarness(Promise.resolve(), {
     instruments: [sampleInstrument({ id: 'piano', label: 'Piano', baseUrl: '/piano/', fetchFile })],
     defaultInstrumentId: 'piano',
@@ -197,12 +229,36 @@ describe('sampled piano and instrument manager', () => {
     expect(buffers[0]?.buffer).toMatchObject({ marker: 1 })
     expect(buffers[1]?.buffer).toMatchObject({ marker: 2 })
     expect(buffers[0]?.playbackRate.setValueAtTime.mock.lastCall?.[0]).toBeCloseTo(2 ** (1 / 12))
-    expect(gains[1]?.gain.linearRampToValueAtTime.mock.lastCall?.[0]).toBeCloseTo(0.051)
-    expect(gains[2]?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.17, 10.006)
+    expect(gains.at(-2)?.gain.linearRampToValueAtTime.mock.lastCall?.[0]).toBeCloseTo(0.246)
+    expect(gains.at(-1)?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.82, 10.006)
     expect(buffers.every(({ stop }) => stop.mock.calls.length === 0)).toBe(true)
     await engine.dispose()
     expect(buffers.every(({ disconnect }) => disconnect.mock.calls.length === 1)).toBe(true)
     expect(context.close).toHaveBeenCalledOnce()
+  })
+
+  it('initialises and resets instrument trim independently and leaves the fallback bus unchanged', async () => {
+    const saveGainDb = vi.fn()
+    const { engine, gains, factory } = sampledHarness(servePiano(), {
+      load: () => 'piano', save: vi.fn(), loadGainDb: (id) => id === 'piano' ? -6 : 2, saveGainDb,
+    })
+    expect(engine.instruments.getState().gainDb).toBe(-6)
+    engine.instruments.setGainDb(6)
+    expect(factory).not.toHaveBeenCalled()
+    await engine.resume()
+    await ready(engine)
+    const [synth, piano] = gains.slice(2)
+    expect(synth?.gain.value).toBeCloseTo(10 ** (2 / 20))
+    expect(piano?.gain.value).toBeCloseTo(10 ** (6 / 20))
+    engine.instruments.setGainDb(0)
+    expect(piano?.gain.setTargetAtTime).toHaveBeenLastCalledWith(1, 10, 0.015)
+    expect(synth?.gain.setTargetAtTime).not.toHaveBeenCalled()
+    expect(saveGainDb.mock.calls).toEqual([['piano', 6], ['piano', 0]])
+    await engine.instruments.select('synth')
+    expect(engine.instruments.getState().gainDb).toBe(2)
+    await engine.instruments.select('piano')
+    expect(engine.instruments.getState().gainDb).toBe(0)
+    expect(() => engine.instruments.setGainDb(13)).toThrow(RangeError)
   })
 
   it('falls back on asset failure, permits retry and keeps the oscillator usable', async () => {

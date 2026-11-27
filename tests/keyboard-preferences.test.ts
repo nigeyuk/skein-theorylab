@@ -31,7 +31,7 @@ describe('keyboard preferences', () => {
     const preferences = createKeyboardPreferences(storage)
     const picks = {
       showNoteLabels: false, expanded: false, instrumentId: 'acoustic-grand', volume: 0.25,
-      muted: true, midiDeviceId: 'usb:controller-1', midiChannel: 9,
+      muted: true, instrumentGainsDb: { 'acoustic-grand': 12, synth: -12 }, midiDeviceId: 'usb:controller-1', midiChannel: 9,
     }
     preferences.update(picks)
     expect(createKeyboardPreferences(storage).getState()).toMatchObject(picks)
@@ -46,11 +46,12 @@ describe('keyboard preferences', () => {
       [key]: JSON.stringify({
         version: 1, firstOctave: 99, octaveCount: -1, showNoteLabels: 'false',
         expanded: false, instrumentId: '../piano', volume: 1.5, midiDeviceId: '', midiChannel: 17,
+        instrumentGainsDb: { 'acoustic-grand': 5, synth: '5', organ: 13, '../strings': 2 },
       }),
     })
     expect(createKeyboardPreferences(storage).getState()).toEqual({
       firstOctave: 3, octaveCount: 3, showNoteLabels: true, expanded: false,
-      instrumentId: null, volume: 0.65, muted: false, midiDeviceId: null, midiChannel: null,
+      instrumentId: null, instrumentGainsDb: { 'acoustic-grand': 5 }, volume: 0.65, muted: false, midiDeviceId: null, midiChannel: null,
     })
     const preferences = createKeyboardPreferences(memoryStorage({ [key]: '<not json>' }))
     expect(preferences.getState()).toMatchObject({ octaveCount: 3, expanded: null })
@@ -64,7 +65,7 @@ describe('keyboard preferences', () => {
       'skein-theorylab:instrument': 'synth',
     })
     const preferences = createKeyboardPreferences(storage)
-    expect(preferences.getState()).toMatchObject({ instrumentId: 'synth', midiDeviceId: 'saved-usb' })
+    expect(preferences.getState()).toMatchObject({ instrumentId: 'synth', instrumentGainsDb: {}, midiDeviceId: 'saved-usb' })
     preferences.update({ midiDeviceId: null })
     expect(createKeyboardPreferences(storage).getState()).toMatchObject({ instrumentId: 'synth', midiDeviceId: null })
   })

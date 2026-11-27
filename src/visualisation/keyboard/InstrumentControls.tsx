@@ -1,10 +1,12 @@
 import { useState, useSyncExternalStore } from 'react'
+import { instrumentGainRange } from '../../audio'
 import type { InstrumentControls as Controls } from '../../audio'
 
 export function InstrumentControls({ controls, onChange }: { controls: Controls; onChange(): void }) {
-  const { selectedId, status, loaded, total } = useSyncExternalStore(controls.subscribe, controls.getState, controls.getState)
+  const { selectedId, status, loaded, total, gainDb } = useSyncExternalStore(controls.subscribe, controls.getState, controls.getState)
   const [audioError, setAudioError] = useState(false)
   const credits = controls.options.find(({ id }) => id === selectedId)?.creditsUrl
+  const gainLabel = (gainDb > 0 ? '+' : '') + gainDb + ' dB'
 
   function select(id: string) {
     setAudioError(false)
@@ -19,6 +21,15 @@ export function InstrumentControls({ controls, onChange }: { controls: Controls;
           {controls.options.map(({ id, label }) => <option value={id} key={id}>{label}</option>)}
         </select>
       </label>
+      <div className="lab-button-row" role="group" aria-label="Instrument gain controls">
+        <label className="keyboard-setting">Instrument gain
+          <input type="range" min={instrumentGainRange.min} max={instrumentGainRange.max} value={gainDb}
+            aria-valuetext={gainLabel} onChange={(event) => controls.setGainDb(Number(event.target.value))} />
+        </label>
+        <span className="instrument-gain-value">{gainLabel}</span>
+        <button className="lab-button" type="button" disabled={gainDb === instrumentGainRange.default}
+          onClick={() => controls.setGainDb(instrumentGainRange.default)}>Reset gain</button>
+      </div>
       <div className="instrument-status" role="status">
         {audioError ? 'Audio could not start. Try playing a note.' : {
           idle: 'Play a note to load samples.',

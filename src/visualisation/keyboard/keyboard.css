@@ -120,3 +120,10 @@
 .instrument-controls progress { width: 82px; height: 10px; accent-color: var(--color-accent); }
 .instrument-controls select { max-width: min(13rem, 57vw); }
 .instrument-credits { color: var(--color-accent); font-size: .8125rem; text-decoration: underline; }
+.instrument-gain-value { min-width: 3.6em; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+
+.keyboard-output-meter { display: flex; align-items: center; gap: 5px; font-size: .8125rem; }
+.keyboard-output-meter meter { width: 52px; height: 10px; appearance: none; background: var(--color-elevated); }
+.keyboard-output-meter meter::-webkit-meter-bar { background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: 2px; }
+.keyboard-output-meter meter::-webkit-meter-optimum-value { background: var(--color-accent); }
+.keyboard-output-meter meter::-moz-meter-bar { background: var(--color-accent); }

@@ -1,6 +1,7 @@
 import {
   defaultOctaveRange, keyboardRange, maxKeyboardOctave, minKeyboardOctave,
 } from '../visualisation/keyboard/piano-keys'
+import { isInstrumentGainDb } from '../audio/gain'
 
 const storageKey = 'skein-theorylab:keyboard-preferences'
 const version = 1
@@ -14,6 +15,7 @@ export interface KeyboardPreferenceValues {
   readonly volume: number
   readonly muted: boolean
   readonly instrumentId: string | null
+  readonly instrumentGainsDb: Readonly<Record<string, number>>
   readonly midiDeviceId: string | null
   readonly midiChannel: number | null
 }
@@ -26,6 +28,7 @@ const defaults: KeyboardPreferenceValues = {
   volume: 0.65,
   muted: false,
   instrumentId: null,
+  instrumentGainsDb: {},
   midiDeviceId: null,
   midiChannel: null,
 }
@@ -40,7 +43,16 @@ function isIntegerIn(value: unknown, min: number, max: number): value is number 
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
 }
 
-function validated(record: Record<string, unknown>): KeyboardPreferenceValues {
+function isInstrumentId(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-z0-9][a-z0-9-]{0,63}$/.test(value)
+}
+
+function validInstrumentGains(value: unknown): KeyboardPreferenceValues['instrumentGainsDb'] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return defaults.instrumentGainsDb
+  return Object.fromEntries(Object.entries(value).filter(([id, gain]) => isInstrumentId(id) && isInstrumentGainDb(gain)))
+}
+
+function validated(record: Record<string, unknown>, instrumentGainsDb = validInstrumentGains(record.instrumentGainsDb)): KeyboardPreferenceValues {
   const count = isIntegerIn(record.octaveCount, 1, maxKeyboardOctave - minKeyboardOctave + 1)
     ? record.octaveCount : defaults.octaveCount
   const first = isIntegerIn(record.firstOctave, minKeyboardOctave, maxKeyboardOctave)
@@ -53,7 +65,8 @@ function validated(record: Record<string, unknown>): KeyboardPreferenceValues {
     expanded: typeof record.expanded === 'boolean' ? record.expanded : null,
     volume: typeof record.volume === 'number' && record.volume >= 0 && record.volume <= 1 ? record.volume : defaults.volume,
     muted: typeof record.muted === 'boolean' ? record.muted : defaults.muted,
-    instrumentId: typeof record.instrumentId === 'string' && /^[a-z0-9][a-z0-9-]{0,63}$/.test(record.instrumentId) ? record.instrumentId : null,
+    instrumentId: isInstrumentId(record.instrumentId) ? record.instrumentId : null,
+    instrumentGainsDb,
     midiDeviceId: typeof record.midiDeviceId === 'string' && record.midiDeviceId.trim() && record.midiDeviceId.length <= 512
       ? record.midiDeviceId : null,
     midiChannel: isIntegerIn(record.midiChannel, 1, 16) ? record.midiChannel : null,
@@ -92,7 +105,7 @@ export function createKeyboardPreferences(storage: PreferenceStorage | undefined
       return () => { listeners.delete(listener) }
     },
     update(changes: Partial<KeyboardPreferenceValues>) {
-      const next = validated({ ...state, ...changes })
+      const next = validated({ ...state, ...changes }, changes.instrumentGainsDb === undefined ? state.instrumentGainsDb : undefined)
       if ((Object.keys(next) as (keyof KeyboardPreferenceValues)[]).every((key) => next[key] === state[key])) return
       state = next
       try { storage?.setItem(storageKey, JSON.stringify({ version, ...state })) } catch { /* Keep the session preferences. */ }

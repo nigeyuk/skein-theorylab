@@ -30,6 +30,8 @@ export interface InstrumentDefinition {
 export interface InstrumentPreferences {
   load(): string | null
   save(id: string): void
+  loadGainDb?(id: string): number | undefined
+  saveGainDb?(id: string, gainDb: number): void
 }
 
 export interface InstrumentState {
@@ -38,6 +40,7 @@ export interface InstrumentState {
   readonly status: 'idle' | 'loading' | 'ready' | 'error'
   readonly loaded: number
   readonly total: number
+  readonly gainDb: number
 }
 
 export interface InstrumentControls {
@@ -45,4 +48,5 @@ export interface InstrumentControls {
   getState(): InstrumentState
   subscribe(listener: () => void): () => void
   select(id: string): Promise<void>
+  setGainDb(gainDb: number): void
 }

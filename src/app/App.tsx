@@ -124,6 +124,10 @@ export function App() {
       preferences: {
         load: () => keyboardPreferences.getState().instrumentId,
         save: (instrumentId) => keyboardPreferences.update({ instrumentId }),
+        loadGainDb: (id) => keyboardPreferences.getState().instrumentGainsDb[id],
+        saveGainDb: (id, gainDb) => keyboardPreferences.update({
+          instrumentGainsDb: { ...keyboardPreferences.getState().instrumentGainsDb, [id]: gainDb },
+        }),
       },
     })
     audio.setSettings({ volume: saved.volume, muted: saved.muted })

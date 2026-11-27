@@ -113,7 +113,7 @@ export function sampleInstrument({ id, label, creditsUrl, baseUrl, fetchFile = f
           }))
           signal.throwIfAborted()
           bank = createVoiceBank(context, output, {
-            attack: 0.006, release: manifest.releaseSeconds, voiceGain: 0.17,
+            attack: 0.006, release: manifest.releaseSeconds, voiceGain: 0.82,
             maxPolyphony: manifest.maxPolyphony, steal: true,
             source({ hertz, velocity, start }) {
               const sample = nearestSample(decoded, hertz, velocity)

@@ -5,6 +5,7 @@ import type { InstrumentControls } from './instrument'
 export { createAudioEngine } from './web-audio'
 export type { AudioEngineOptions } from './web-audio'
 export { sampleInstrument } from './sampler'
+export { instrumentGainRange } from './gain'
 export type { AudioInstrument, InstrumentControls, InstrumentDefinition, InstrumentPreferences, InstrumentNote, InstrumentState, InstrumentVoice } from './instrument'
 
 /** Sound frequency in cycles per second. */
@@ -15,6 +16,11 @@ export interface AudioFrequency {
 export interface AudioSettings {
   readonly volume: number
   readonly muted: boolean
+}
+
+export interface OutputPeaks {
+  readonly left: number
+  readonly right: number
 }
 
 export interface PlaybackFrame {
@@ -38,6 +44,8 @@ export interface AudioEngine {
   allNotesOff(): void
   getSettings(): AudioSettings
   setSettings(settings: Partial<AudioSettings>): void
+  /** Recent sample peaks per channel from the final output, with 1 representing full scale. */
+  readOutputPeaks(): OutputPeaks
   subscribe(listener: () => void): () => void
   /** Release audio resources. A later user gesture may create a fresh context. */
   dispose(): Promise<void>
