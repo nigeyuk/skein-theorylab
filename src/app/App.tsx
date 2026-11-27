@@ -9,6 +9,7 @@ import { ChordWorkspace } from '../reference/interactive/ChordWorkspace'
 import { IntervalWorkspace } from '../reference/interactive/IntervalWorkspace'
 import type { KeyboardAccess } from '../visualisation/keyboard/model'
 import { AppVersion } from './AppVersion'
+import { SettingsWorkspace } from './SettingsWorkspace'
 import { useNavigation } from './navigation'
 import { dashboard, workspaceGroups } from './workspaces'
 import type { Workspace } from './workspaces'
@@ -187,6 +188,8 @@ export function App() {
             <div className="content">
               {workspace.id === dashboard.id ? <Dashboard /> : workspace.id === 'content-manager' ? (
                 <Suspense fallback={<h1 id="workspace-title" tabIndex={-1}>Content Manager</h1>}><ContentManager /></Suspense>
+              ) : workspace.id === 'settings' ? (
+                <SettingsWorkspace keyboard={keyboardPreferences} description={workspace.description} />
               ) : <Placeholder workspace={workspace} />}
             </div>
             <KeyboardPanel key={workspace.id} access={access} audio={audio} input={input} midi={midi} preferences={keyboardPreferences} />

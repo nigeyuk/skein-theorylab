@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { FocusEvent, KeyboardEvent, PointerEvent } from 'react'
-import { formatNote } from '../../music-theory'
+import { formatNote, fromMidi } from '../../music-theory'
 import type { Note } from '../../music-theory'
 import type { NoteInputManager } from '../../note-input'
 import { createKeyboardInput } from './keyboard-input'
@@ -15,10 +15,11 @@ interface PianoKeysProps {
 }
 
 const playbackError = 'Audio could not start. Try pressing a key again.'
+const middleC = pitchKey(fromMidi(60))
 const shortRoles: Readonly<Record<string, string>> = { Third: '3rd', Fifth: '5th', Seventh: '7th' }
 
 export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
-  const { octaveRange, showNoteLabels, annotations } = config
+  const { octaveRange, showNoteLabels, highlightMiddleC, annotations } = config
   const source = useId()
   const keys = pianoKeys(octaveRange)
   const [focusedIndex, setFocusedIndex] = useState(0)
@@ -127,12 +128,13 @@ export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
                 const roles = [...new Set(matches.flatMap(({ chordToneRole, scaleDegree }) => [chordToneRole, scaleDegree].filter((role): role is string => Boolean(role))))]
                 const active = sounding.has(pitchKey(key.pitch))
                 const highlighted = matches.some((annotation) => annotation.highlighted)
+                const isMiddleC = pitchKey(key.pitch) === middleC
                 return (
                   <button
                     key={pitchKey(key.pitch)}
                     className={key.accidental ? 'keyboard-key keyboard-accidental' : 'keyboard-key keyboard-natural'}
                     type="button"
-                    aria-label={[label, ...roles, highlighted ? 'highlighted' : null].filter(Boolean).join(', ')}
+                    aria-label={[label, isMiddleC ? 'Middle C' : null, ...roles, highlighted ? 'highlighted' : null].filter(Boolean).join(', ')}
                     aria-pressed={active}
                     data-highlighted={highlighted || undefined}
                     data-role={matches.find((annotation) => annotation.chordToneRole)?.chordToneRole}
@@ -151,6 +153,7 @@ export function PianoKeys({ config, noteInput, onNote }: PianoKeysProps) {
                       noteInput.play(source + ':activation', [{ pitches: [key.pitch], offset: 0, duration: 0.24 }]).catch(() => setError(playbackError))
                     }}
                   >
+                    {isMiddleC && highlightMiddleC && <span className="keyboard-middle-c" aria-hidden="true">C4</span>}
                     {showNoteLabels && <span>{label}</span>}
                     {roles.length > 0 && <span className="keyboard-key-role">{roles.map((role) => shortRoles[role] ?? role).join(' / ')}</span>}
                   </button>

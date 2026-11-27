@@ -48,7 +48,7 @@ export const workspaceGroups: { title: string; workspaces: Workspace[] }[] = [
     title: 'Personal',
     workspaces: [
       { id: 'learning-progress', title: 'Learning progress', description: 'Your progress will appear here once completed exercises can be recorded.', icon: TrendingUp, color: 'mint' },
-      { id: 'settings', title: 'Settings', description: 'Application preferences will be available here as features are added.', icon: Settings2, color: 'blue' },
+      { id: 'settings', title: 'Settings', description: 'Configure how your virtual keyboard looks and opens.', icon: Settings2, color: 'blue' },
     ],
   },
 ]

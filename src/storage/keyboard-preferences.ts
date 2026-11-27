@@ -10,7 +10,9 @@ export interface KeyboardPreferenceValues {
   readonly firstOctave: number
   readonly octaveCount: number
   readonly showNoteLabels: boolean
-  /** Null follows the workspace's initial dock state until the user changes it. */
+  readonly highlightMiddleC: boolean
+  readonly startCollapsed: boolean
+  /** Remembered dock state for startups that do not force it closed. */
   readonly expanded: boolean | null
   readonly volume: number
   readonly muted: boolean
@@ -24,6 +26,8 @@ const defaults: KeyboardPreferenceValues = {
   firstOctave: defaultOctaveRange.first,
   octaveCount: defaultOctaveRange.last - defaultOctaveRange.first + 1,
   showNoteLabels: true,
+  highlightMiddleC: true,
+  startCollapsed: false,
   expanded: null,
   volume: 0.65,
   muted: false,
@@ -62,6 +66,8 @@ function validated(record: Record<string, unknown>, instrumentGainsDb = validIns
     firstOctave: range.first,
     octaveCount: count,
     showNoteLabels: typeof record.showNoteLabels === 'boolean' ? record.showNoteLabels : defaults.showNoteLabels,
+    highlightMiddleC: typeof record.highlightMiddleC === 'boolean' ? record.highlightMiddleC : defaults.highlightMiddleC,
+    startCollapsed: typeof record.startCollapsed === 'boolean' ? record.startCollapsed : defaults.startCollapsed,
     expanded: typeof record.expanded === 'boolean' ? record.expanded : null,
     volume: typeof record.volume === 'number' && record.volume >= 0 && record.volume <= 1 ? record.volume : defaults.volume,
     muted: typeof record.muted === 'boolean' ? record.muted : defaults.muted,
@@ -96,20 +102,33 @@ export function createKeyboardPreferences(storage: PreferenceStorage | undefined
   }
 
   let state = restore()
+  let sessionExpanded = state.startCollapsed ? false : state.expanded
   const listeners = new Set<() => void>()
+
+  function commit(changes: Partial<KeyboardPreferenceValues>, nextExpanded = sessionExpanded) {
+    const next = validated({ ...state, ...changes }, changes.instrumentGainsDb === undefined ? state.instrumentGainsDb : undefined)
+    const persistentChange = (Object.keys(next) as (keyof KeyboardPreferenceValues)[]).some((key) => next[key] !== state[key])
+    if (!persistentChange && nextExpanded === sessionExpanded) return
+    sessionExpanded = nextExpanded
+    if (persistentChange) {
+      state = next
+      try { storage?.setItem(storageKey, JSON.stringify({ version, ...state })) } catch { /* Keep the session preferences. */ }
+    }
+    for (const listener of listeners) listener()
+  }
 
   return {
     getState: () => state,
+    getExpanded: () => sessionExpanded,
+    setExpanded(expanded: boolean) {
+      commit(state.startCollapsed ? {} : { expanded }, expanded)
+    },
     subscribe(listener: () => void) {
       listeners.add(listener)
       return () => { listeners.delete(listener) }
     },
-    update(changes: Partial<KeyboardPreferenceValues>) {
-      const next = validated({ ...state, ...changes }, changes.instrumentGainsDb === undefined ? state.instrumentGainsDb : undefined)
-      if ((Object.keys(next) as (keyof KeyboardPreferenceValues)[]).every((key) => next[key] === state[key])) return
-      state = next
-      try { storage?.setItem(storageKey, JSON.stringify({ version, ...state })) } catch { /* Keep the session preferences. */ }
-      for (const listener of listeners) listener()
+    update(changes: Partial<Omit<KeyboardPreferenceValues, 'expanded'>>) {
+      commit(changes)
     },
   }
 }

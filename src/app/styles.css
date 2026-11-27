@@ -114,6 +114,19 @@ h1:focus { outline: none; }
 .placeholder-status { color: var(--module); margin-top: 24px; font-size: .875rem; }
 .back-link { color: var(--color-accent); display: inline-block; margin-top: 20px; text-decoration: underline; text-underline-offset: 4px; }
 .back-link:hover { color: var(--color-accent-hover); }
+.settings-workspace { max-width: 680px; }
+.settings-workspace h1 { font-size: clamp(2rem, 4vw, 3.15rem); line-height: 1.1; font-weight: 700; letter-spacing: -.04em; }
+.settings-workspace > p { margin-top: 6px; color: var(--color-muted); }
+.settings-panel {
+  margin-top: 20px; padding: 16px 18px; border: 1px solid var(--color-border);
+  border-radius: 12px; background: var(--color-panel);
+}
+.settings-panel h2 { font-size: 1.18rem; font-weight: 680; margin-bottom: 4px; }
+.settings-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; cursor: pointer; }
+.settings-option + .settings-option { border-top: 1px solid var(--color-border); }
+.settings-option:last-child { padding-bottom: 4px; }
+.settings-option small { display: block; margin-top: 2px; color: var(--color-muted); font-size: .875rem; }
+.settings-option input { flex: none; width: 18px; height: 18px; accent-color: var(--color-accent); }
 @media (max-width: 760px) {
   .shell { display: block; }
   .sidebar { position: relative; height: auto; padding: 14px 20px; border-right: 0; border-bottom: 1px solid var(--color-border); }

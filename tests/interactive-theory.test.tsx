@@ -64,6 +64,65 @@ describe('virtual keyboard', () => {
     expect(disabled).not.toContain('aria-label="Piano keys"')
   })
 
+  it('marks only MIDI pitch 60, independently of visual note labels and educational highlights', () => {
+    const audio = createAudioEngine()
+    const input = createNoteInputManager(audio)
+    const midi = createMidiInput({ emit: () => {} })
+    const preferences = createKeyboardPreferences()
+    const annotations = chordStudy(parseNote('C4'), 'major', 0).annotations
+    const render = () => renderToStaticMarkup(<KeyboardPanel access={{ mode: 'available' }} audio={audio} input={input}
+      midi={midi} preferences={preferences} annotations={annotations} initiallyOpen />)
+    preferences.update({ showNoteLabels: false, firstOctave: 4, octaveCount: 2 })
+    const html = render()
+    expect(html).toContain('aria-label="C4, Middle C, Root, highlighted"')
+    expect(html).toContain('aria-label="C5"')
+    expect(html).not.toContain('<span>C5</span>')
+    expect(html.match(/class="keyboard-middle-c"/g)).toHaveLength(1)
+    expect(html).toContain('data-highlighted="true" data-role="Root"')
+    preferences.update({ highlightMiddleC: false })
+    expect(render()).not.toContain('class="keyboard-middle-c"')
+    expect(render()).toContain('aria-label="C4, Middle C, Root, highlighted"')
+    preferences.update({ firstOctave: 5, highlightMiddleC: true, showNoteLabels: true })
+    const higher = render()
+    expect(higher).not.toContain('Middle C')
+    expect(higher).not.toContain('class="keyboard-middle-c"')
+    expect(higher).toContain('<span>C5</span>')
+  })
+
+  it('leaves controller input and programmatic playback available with the visual keyboard collapsed', async () => {
+    const audio = createAudioEngine()
+    const noteOn = vi.spyOn(audio, 'noteOn').mockResolvedValue(undefined)
+    const play = vi.spyOn(audio, 'play').mockResolvedValue(undefined)
+    const input = createNoteInputManager(audio)
+    const port = Object.assign(new EventTarget(), {
+      id: 'usb', name: 'USB keys', state: 'connected', connection: 'open',
+      open: async () => {}, close: async () => {},
+    })
+    const access = Object.assign(new EventTarget(), { inputs: new Map([['usb', port]]) })
+    const pending: Promise<void>[] = []
+    const midi = createMidiInput({
+      requestAccess: async () => access as unknown as MIDIAccess,
+      emit: (event) => { pending.push(input.dispatch(event)) },
+    })
+    const preferences = createKeyboardPreferences()
+    await midi.enable()
+    preferences.setExpanded(false)
+    const html = renderToStaticMarkup(<KeyboardPanel access={{ mode: 'available' }} audio={audio} input={input}
+      midi={midi} preferences={preferences} initiallyOpen />)
+    expect(html).toContain('Virtual keyboard')
+    expect(html).not.toContain('aria-label="Piano keys"')
+    port.dispatchEvent(Object.assign(new Event('midimessage'), { data: Uint8Array.of(0x90, 60, 80) }))
+    await Promise.all(pending)
+    expect(noteOn).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      pitch: fromMidi(60), origin: { kind: 'midi', deviceId: 'usb', channel: 1 },
+    }))
+    const frames = [{ pitches: [fromMidi(64)], offset: 0, duration: 0.25 }]
+    await input.play('study', frames)
+    expect(play).toHaveBeenCalledWith('study', frames)
+    midi.disable()
+    input.panic()
+  })
+
   it('emits independent note lifecycle events and releases every held press once', () => {
     const emit = vi.fn()
     const input = createKeyboardInput('keyboard', emit)

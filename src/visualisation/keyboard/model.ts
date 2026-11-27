@@ -17,5 +17,6 @@ export interface KeyboardViewConfig {
   /** Inclusive octave bounds, with each octave beginning at C. */
   readonly octaveRange: { readonly first: number; readonly last: number }
   readonly showNoteLabels: boolean
+  readonly highlightMiddleC: boolean
   readonly annotations: readonly KeyboardKeyAnnotation[]
 }

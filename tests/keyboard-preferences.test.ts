@@ -30,27 +30,54 @@ describe('keyboard preferences', () => {
     const storage = memoryStorage()
     const preferences = createKeyboardPreferences(storage)
     const picks = {
-      showNoteLabels: false, expanded: false, instrumentId: 'acoustic-grand', volume: 0.25,
+      showNoteLabels: false, highlightMiddleC: false, instrumentId: 'acoustic-grand', volume: 0.25,
       muted: true, instrumentGainsDb: { 'acoustic-grand': 12, synth: -12 }, midiDeviceId: 'usb:controller-1', midiChannel: 9,
     }
     preferences.update(picks)
-    expect(createKeyboardPreferences(storage).getState()).toMatchObject(picks)
-    preferences.update({ expanded: true, midiDeviceId: null, midiChannel: null })
+    preferences.setExpanded(false)
+    expect(createKeyboardPreferences(storage).getState()).toMatchObject({ ...picks, expanded: false })
+    preferences.setExpanded(true)
+    preferences.update({ midiDeviceId: null, midiChannel: null })
     expect(createKeyboardPreferences(storage).getState()).toMatchObject({
       expanded: true, midiDeviceId: null, midiChannel: null,
     })
+  })
+
+  it('uses a separate startup override and keeps manual expansion local until normal remembering resumes', () => {
+    const storage = memoryStorage({ [key]: JSON.stringify({ version: 1, expanded: true, showNoteLabels: false }) })
+    const original = createKeyboardPreferences(storage)
+    expect(original.getState()).toMatchObject({ highlightMiddleC: true, startCollapsed: false, showNoteLabels: false })
+    expect(original.getExpanded()).toBe(true)
+    original.update({ startCollapsed: true })
+    expect(original.getExpanded()).toBe(true)
+
+    const restarted = createKeyboardPreferences(storage)
+    const dockUpdated = vi.fn()
+    restarted.subscribe(dockUpdated)
+    expect(restarted.getExpanded()).toBe(false)
+    restarted.setExpanded(true)
+    expect(restarted.getExpanded()).toBe(true)
+    expect(dockUpdated).toHaveBeenCalledOnce()
+    expect(storage.setItem).toHaveBeenCalledOnce()
+    expect(createKeyboardPreferences(storage).getExpanded()).toBe(false)
+
+    restarted.update({ startCollapsed: false })
+    expect(restarted.getExpanded()).toBe(true)
+    expect(createKeyboardPreferences(storage).getExpanded()).toBe(true)
+    restarted.setExpanded(false)
+    expect(createKeyboardPreferences(storage).getExpanded()).toBe(false)
   })
 
   it('validates corrupt, missing and out-of-range values without discarding valid preferences', () => {
     const storage = memoryStorage({
       [key]: JSON.stringify({
         version: 1, firstOctave: 99, octaveCount: -1, showNoteLabels: 'false',
-        expanded: false, instrumentId: '../piano', volume: 1.5, midiDeviceId: '', midiChannel: 17,
+        expanded: false, highlightMiddleC: 0, startCollapsed: 'yes', instrumentId: '../piano', volume: 1.5, midiDeviceId: '', midiChannel: 17,
         instrumentGainsDb: { 'acoustic-grand': 5, synth: '5', organ: 13, '../strings': 2 },
       }),
     })
     expect(createKeyboardPreferences(storage).getState()).toEqual({
-      firstOctave: 3, octaveCount: 3, showNoteLabels: true, expanded: false,
+      firstOctave: 3, octaveCount: 3, showNoteLabels: true, highlightMiddleC: true, startCollapsed: false, expanded: false,
       instrumentId: null, instrumentGainsDb: { 'acoustic-grand': 5 }, volume: 0.65, muted: false, midiDeviceId: null, midiChannel: null,
     })
     const preferences = createKeyboardPreferences(memoryStorage({ [key]: '<not json>' }))

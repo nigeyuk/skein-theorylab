@@ -26,11 +26,12 @@ interface KeyboardPanelProps {
 
 export function KeyboardPanel({ access, audio, input, midi, preferences, annotations = [], onNote, initiallyOpen = false }: KeyboardPanelProps) {
   const saved = useSyncExternalStore(preferences.subscribe, preferences.getState, preferences.getState)
+  const sessionExpanded = useSyncExternalStore(preferences.subscribe, preferences.getExpanded, preferences.getExpanded)
   const [restrictedExpanded, setRestrictedExpanded] = useState(initiallyOpen)
   const [temporaryRange, setTemporaryRange] = useState<ReturnType<typeof keyboardRange> | null>(null)
   const baseRange = keyboardRange(saved.firstOctave, saved.octaveCount)
   const range = temporaryRange ?? baseRange
-  const expanded = access.mode === 'available' ? saved.expanded ?? initiallyOpen : restrictedExpanded
+  const expanded = access.mode === 'available' ? sessionExpanded ?? initiallyOpen : restrictedExpanded
   const { volume, muted } = useSyncExternalStore(audio.subscribe, audio.getSettings, audio.getSettings)
   const count = range.last - range.first + 1
   const fitted = fitKeyboardRange(range, annotations)
@@ -62,7 +63,7 @@ export function KeyboardPanel({ access, audio, input, midi, preferences, annotat
     <details className="keyboard-dock" open={expanded}>
       <summary onClick={(event) => {
         event.preventDefault()
-        if (access.mode === 'available') preferences.update({ expanded: !expanded })
+        if (access.mode === 'available') preferences.setExpanded(!expanded)
         else setRestrictedExpanded(!expanded)
       }}>
         <Piano size={19} aria-hidden="true" />
@@ -98,7 +99,10 @@ export function KeyboardPanel({ access, audio, input, midi, preferences, annotat
                 <InstrumentControls controls={audio.instruments} onChange={() => { midi.resetNotes(); input.panic() }} />
                 <MidiControls midi={midi} input={input} audio={audio} />
               </div>
-              <PianoKeys config={{ octaveRange: range, showNoteLabels: saved.showNoteLabels, annotations }} noteInput={input} onNote={onNote} />
+              <PianoKeys
+                config={{ octaveRange: range, showNoteLabels: saved.showNoteLabels, highlightMiddleC: saved.highlightMiddleC, annotations }}
+                noteInput={input} onNote={onNote}
+              />
             </>
           )}
         </div>
