@@ -73,7 +73,7 @@ export default function PdfPreview({ blob, title }: { blob: Blob; title: string 
   async function printDocument(wholeDocument: boolean) {
     if (!pdf) return
     const popup = window.open('about:blank', '_blank')
-    if (!popup) { setError('Allow pop-ups for TheoryLab to print.'); return }
+    if (!popup) { setError('Allow pop-ups for MyTheoryLab to print.'); return }
     popup.opener = null
     setPrinting(true)
     setError('')

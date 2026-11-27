@@ -18,6 +18,6 @@ The bundle has 32 mono MP3 recordings. It uses 16 roots from A0 to C8 and two re
 
 The MP3 payload is 1,150,848 bytes. All 32 clips are limited to 4.5 seconds. At a 48 kHz context rate they require approximately 26.4 MiB of decoded mono Float32 sample data, plus browser and node overhead. A higher context sample rate increases that estimate proportionally. Only the selected upstream FLAC files were downloaded for conversion.
 
-[Tone Piano](https://github.com/tambien/Piano) informed the use of sampled roots, configurable velocity layers, explicit readiness and pedal behaviour. It layers Tone.js and optional WebMidi on top of Salamander samples. TheoryLab implements those behaviours with its existing native audio and MIDI APIs. No Tone Piano source or runtime dependencies are included.
+[Tone Piano](https://github.com/tambien/Piano) informed the use of sampled roots, configurable velocity layers, explicit readiness and pedal behaviour. It layers Tone.js and optional WebMidi on top of Salamander samples. MyTheoryLab implements those behaviours with its existing native audio and MIDI APIs. No Tone Piano source or runtime dependencies are included.
 
 See the [recording attribution](../../public/instruments/salamander-v1/ATTRIBUTION.md) and [licence](../../public/instruments/salamander-v1/LICENSE.txt).

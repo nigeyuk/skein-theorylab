@@ -1,6 +1,12 @@
-# SKEIN TheoryLab
+# MyTheoryLab
 
-SKEIN TheoryLab is a browser-native workspace for learning music theory. Open **Intervals** or **Chords** to compare spelled notes, inspect the theory steps and hear the result. The shared virtual keyboard is also available in compatible workspaces.
+**Learn. Explore. Compose.**
+
+Learn by doing. Discover by experimenting.
+
+MyTheoryLab is a browser-native workspace for learning music theory. Open **Intervals** or **Chords** to compare spelled notes, inspect the theory steps and hear the result. The shared virtual keyboard is also available in compatible workspaces.
+
+Official site: [mytheorylab.com](https://mytheorylab.com).
 
 ## Get started
 
@@ -21,6 +27,12 @@ Open the local URL printed by Vite. All workspaces support direct links and brow
 - The first playback gesture starts audio and loads the default acoustic grand. The synth plays during loading or if samples are unavailable. Choose an instrument in the keyboard dock. Volume and mute apply to keyboard, MIDI and both workspaces. See the [sample credits](public/instruments/salamander-v1/ATTRIBUTION.md).
 
 - To use a USB MIDI controller, click **Enable MIDI** in a compatible workspace and allow the browser permission. Use the device and channel controls to choose an input, or **All notes off** to release held notes. See the [MIDI acceptance test](src/midi/README.md).
+
+## Browser data and hosting
+
+Export a library backup as a `.mytheorypack` from Content Manager before moving to a different site address. Import it at the destination to restore resources and favourites. Browser storage is scoped to the scheme, host and port. Preferences carry forward on the same origin and can be set again when moving to a new origin.
+
+To publish at the official domain, serve the Vite `dist/` output at the site root, configure the host and DNS for `mytheorylab.com`, and enable HTTPS for browser audio and MIDI access. The canonical site URL is already set in `index.html`.
 
 ## Development commands
 

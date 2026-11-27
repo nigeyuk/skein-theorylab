@@ -10,7 +10,7 @@ The shared note input manager publishes source, pitch and normalised velocity to
 
 ## Manual USB controller acceptance test
 
-1. Connect a class-compliant USB MIDI controller. Serve TheoryLab at localhost or over HTTPS in a browser with Web MIDI.
+1. Connect a class-compliant USB MIDI controller. Serve MyTheoryLab at localhost or over HTTPS in a browser with Web MIDI.
 2. Open **Intervals** and check MIDI is disabled before any interaction. Click **Enable MIDI**, allow the browser request and confirm the dock shows the controller name. Choose the controller and a channel. Reload, reenable MIDI and confirm the preferred device is selected.
 3. Play notes softly and firmly, then play a chord. Confirm the notes sound with different levels and the matching keys highlight. Select **Use keyboard** for the second interval note and confirm a MIDI press changes that note. Open **Chords** and confirm a MIDI press changes the root.
 4. Hold a computer piano key and play the same pitch on the controller. Release the controller key first and confirm the computer key continues sounding until released. Send on a channel outside the filter and confirm that no note sounds or highlights.

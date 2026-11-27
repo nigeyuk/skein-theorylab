@@ -4,7 +4,7 @@ export const statuses = ['draft', 'review', 'published', 'archived'] as const
 export const visibilities = ['private', 'public'] as const
 export const difficulties = ['beginner', 'intermediate', 'advanced'] as const
 export const mediaTypes = ['application/pdf', 'text/markdown', 'image/png', 'image/jpeg', 'application/json',
-  'audio/mpeg', 'audio/midi', 'application/vnd.recordare.musicxml+xml', 'application/vnd.skein.score+json'] as const
+  'audio/mpeg', 'audio/midi', 'application/vnd.recordare.musicxml+xml', 'application/vnd.mytheorylab.score+json'] as const
 
 export type ContentType = typeof contentTypes[number]
 export type SupportedType = typeof supportedTypes[number]
@@ -113,12 +113,18 @@ function list<T>(value: unknown, label: string, parse: (item: unknown) => T, max
   return value.map(parse)
 }
 
+export function parseMediaType(value: unknown): MediaType {
+  // Accept the old reserved identifier in serialized descriptors and manifests.
+  return value === 'application/vnd.skein.score+json' ? 'application/vnd.mytheorylab.score+json'
+    : choice(value, mediaTypes, 'Media type')
+}
+
 export function parseAsset(value: unknown): AssetDescriptor {
   const input = object(value, 'File')
   const name = text(input.name, 'File name', 180)
   if (/[/\\:\x00-\x1f\x7f]/.test(name) || name === '.' || name === '..') throw new ContentError('File names may not contain paths or control characters.')
   return {
-    id: identifier(input.id, 'File ID'), name, mediaType: choice(input.mediaType, mediaTypes, 'Media type'),
+    id: identifier(input.id, 'File ID'), name, mediaType: parseMediaType(input.mediaType),
     size: integer(input.size, 'File size', 1, limits.fileBytes), sha256: digest(input.sha256),
   }
 }
@@ -127,7 +133,7 @@ const primaryMedia: Record<ContentType, readonly MediaType[]> = {
   pdf: ['application/pdf'], worksheet: ['application/pdf'], 'answer-sheet': ['application/pdf'],
   markdown: ['text/markdown'], image: ['image/png', 'image/jpeg'], exercise: ['application/json'],
   audio: ['audio/mpeg'], midi: ['audio/midi'], musicxml: ['application/vnd.recordare.musicxml+xml'],
-  score: ['application/vnd.skein.score+json'],
+  score: ['application/vnd.mytheorylab.score+json'],
 }
 
 export function parseContent(value: unknown): ContentRecord {

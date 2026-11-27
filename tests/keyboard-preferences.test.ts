@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createKeyboardPreferences } from '../src/storage/keyboard-preferences'
 
-const key = 'skein-theorylab:keyboard-preferences'
+const key = 'mytheorylab:keyboard-preferences'
+const previousKey = 'skein-theorylab:keyboard-preferences'
 
 function memoryStorage(values: Record<string, string> = {}) {
   const data = new Map(Object.entries(values))
@@ -84,6 +85,25 @@ describe('keyboard preferences', () => {
     expect(preferences.getState()).toMatchObject({ octaveCount: 3, expanded: null })
     preferences.update({ firstOctave: 8, octaveCount: 5 })
     expect(preferences.getState()).toMatchObject({ firstOctave: 5, octaveCount: 5 })
+  })
+
+  it('carries forward the old settings record and writes changes to the new namespace', () => {
+    const previous = JSON.stringify({
+      version: 1, firstOctave: 2, octaveCount: 5, showNoteLabels: false, highlightMiddleC: false, startCollapsed: true,
+      expanded: true, instrumentId: 'synth', volume: 0.25, muted: true,
+      instrumentGainsDb: { synth: -4 }, midiDeviceId: 'saved-usb', midiChannel: 7,
+    })
+    const storage = memoryStorage({ [previousKey]: previous, [key]: 'unreadable' })
+    const preferences = createKeyboardPreferences(storage)
+    expect(preferences.getState()).toMatchObject({
+      firstOctave: 2, octaveCount: 5, showNoteLabels: false, highlightMiddleC: false, startCollapsed: true,
+      expanded: true, instrumentId: 'synth', volume: 0.25, muted: true,
+      instrumentGainsDb: { synth: -4 }, midiDeviceId: 'saved-usb', midiChannel: 7,
+    })
+    expect(preferences.getExpanded()).toBe(false)
+    preferences.update({ showNoteLabels: true, midiDeviceId: null })
+    expect(createKeyboardPreferences(storage).getState()).toEqual(preferences.getState())
+    expect(storage.getItem(previousKey)).toBe(previous)
   })
 
   it('restores legacy instrument and preferred device without undoing explicit clearing', () => {

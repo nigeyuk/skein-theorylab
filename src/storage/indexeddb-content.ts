@@ -4,9 +4,11 @@ import type { LibraryEntry } from '../content/model'
 import type { ContentRepository, LibraryMutation } from '../content/repository'
 
 const store = 'resources'
+// Keep the physical IndexedDB name so the same origin opens its existing library in place.
+const localDatabaseName = 'skein-theorylab-content'
 
 export function createIndexedDbContentRepository(
-  name = 'skein-theorylab-content',
+  name = localDatabaseName,
   factory: IDBFactory | undefined = globalThis.indexedDB,
 ): ContentRepository {
   let connection: Promise<IDBDatabase> | undefined
@@ -18,7 +20,7 @@ export function createIndexedDbContentRepository(
       const request = factory.open(name, 1)
       request.onupgradeneeded = () => { request.result.createObjectStore(store, { keyPath: 'record.id' }) }
       request.onerror = () => reject(request.error)
-      request.onblocked = () => reject(new ContentError('Close other TheoryLab tabs and reload to open the library.'))
+      request.onblocked = () => reject(new ContentError('Close other MyTheoryLab tabs and reload to open the library.'))
       request.onsuccess = () => {
         const database = request.result
         if (connection !== opened) { database.close(); return }

@@ -3,7 +3,8 @@ import {
 } from '../visualisation/keyboard/piano-keys'
 import { isInstrumentGainDb } from '../audio/gain'
 
-const storageKey = 'skein-theorylab:keyboard-preferences'
+const storageKey = 'mytheorylab:keyboard-preferences'
+const previousNamespace = 'skein-theorylab'
 const version = 1
 
 export interface KeyboardPreferenceValues {
@@ -85,8 +86,9 @@ export function createKeyboardPreferences(storage: PreferenceStorage | undefined
   }
 
   function restore() {
-    const serialized = read(storageKey)
-    if (serialized !== null) {
+    for (const key of [storageKey, previousNamespace + ':keyboard-preferences']) {
+      const serialized = read(key)
+      if (serialized === null) continue
       try {
         const value: unknown = JSON.parse(serialized)
         if (typeof value === 'object' && value !== null && 'version' in value && value.version === version) {
@@ -96,8 +98,8 @@ export function createKeyboardPreferences(storage: PreferenceStorage | undefined
     }
 
     return validated({
-      midiDeviceId: read('skein-theorylab:midi-input'),
-      instrumentId: read('skein-theorylab:instrument'),
+      midiDeviceId: read(previousNamespace + ':midi-input'),
+      instrumentId: read(previousNamespace + ':instrument'),
     })
   }
 

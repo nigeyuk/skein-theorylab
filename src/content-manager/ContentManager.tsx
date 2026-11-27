@@ -4,14 +4,15 @@ import { createContentLibrary, searchLibrary } from '../content/library'
 import type { ContentLibrary, ImportCandidate, LibraryFilters } from '../content/library'
 import { ContentError, supportedTypes } from '../content/model'
 import type { ContentMetadata, LibraryEntry, LibraryItem } from '../content/model'
-import { readContentPack, writeContentPack } from '../content/pack'
+import { acceptedPackExtensions, contentPackExtension, isContentPackFilename, readContentPack, writeContentPack } from '../content/pack'
+import { productName } from '../app/brand'
 import { createIndexedDbContentRepository } from '../storage/indexeddb-content'
 import { AssetPreview } from './AssetPreview'
 import { MetadataEditor, typeNames } from './MetadataEditor'
 import './content-manager.css'
 
 const localLibrary = createContentLibrary(createIndexedDbContentRepository())
-const extensions = '.pdf,.md,.markdown,.png,.jpg,.jpeg,.json,.skeinpack'
+const extensions = ['.pdf', '.md', '.markdown', '.png', '.jpg', '.jpeg', '.json', ...acceptedPackExtensions].join(',')
 
 function failureMessage(error: unknown): string {
   if (error instanceof ContentError) return error.message
@@ -20,11 +21,11 @@ function failureMessage(error: unknown): string {
 }
 
 function savePack(blob: Blob, title: string) {
-  const filename = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theorylab'
+  const filename = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || productName.toLowerCase()
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = filename + '.skeinpack'
+  link.download = filename + contentPackExtension
   document.body.append(link)
   link.click()
   link.remove()
@@ -79,9 +80,9 @@ export default function ContentManager({ library = localLibrary }: { library?: C
     setPreview(undefined)
     setAllowUpdates(false)
     await run(async () => {
-      const packs = files.filter(({ name }) => name.toLowerCase().endsWith('.skeinpack'))
+      const packs = files.filter(({ name }) => isContentPackFilename(name))
       if (packs.length) {
-        if (files.length !== 1) throw new ContentError('Select one .skeinpack at a time.')
+        if (files.length !== 1) throw new ContentError('Select one content pack at a time.')
         const pack = await readContentPack(packs[0]!)
         setPreview({ title: pack.title, candidates: await library.preview(pack.entries) })
       } else {
@@ -135,9 +136,9 @@ export default function ContentManager({ library = localLibrary }: { library?: C
         </div>
         <div className="lab-button-row">
           <button className="lab-button" type="button" disabled={busy || !selection.length}
-            onClick={() => { void exportResources(selection, 'TheoryLab collection') }}><Download size={16} aria-hidden="true" /> Export selected</button>
+            onClick={() => { void exportResources(selection, productName + ' collection') }}><Download size={16} aria-hidden="true" /> Export selected</button>
           <button className="lab-button" type="button" disabled={busy || !items.length}
-            onClick={() => { void exportResources(items.map(({ record }) => record.id), 'TheoryLab library', true) }}><Download size={16} aria-hidden="true" /> Export library</button>
+            onClick={() => { void exportResources(items.map(({ record }) => record.id), productName + ' library', true) }}><Download size={16} aria-hidden="true" /> Export library</button>
         </div>
       </header>
 
@@ -146,7 +147,7 @@ export default function ContentManager({ library = localLibrary }: { library?: C
         void startImport(Array.from(event.dataTransfer.files))
       }}>
         <FilePlus2 size={24} aria-hidden="true" />
-        <div><strong>Drop files or a .skeinpack here</strong><p>PDF, Markdown, PNG, JPEG or exercise JSON</p></div>
+        <div><strong>Drop files or a MyTheoryLab content pack here</strong><p>PDF, Markdown, PNG, JPEG or exercise JSON</p></div>
         <button className="lab-button lab-primary" type="button" disabled={busy} onClick={() => importInput.current?.click()}>Choose files</button>
         <input ref={importInput} type="file" hidden multiple accept={extensions} onChange={(event) => {
           void startImport(Array.from(event.target.files ?? []))

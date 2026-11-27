@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Shared SKEIN tokens. Additional themes can override these roles at the root. */
+/* MyTheoryLab theme tokens. Additional themes can override these roles at the root. */
 @theme static {
   --color-canvas: #151515;
   --color-chrome: #1C1C1C;
@@ -46,7 +46,7 @@ h1:focus { outline: none; }
 }
 .brand:hover .brand-icon { background: var(--color-accent-hover); }
 .brand strong, .brand small { display: block; }
-.brand strong { font-size: 1.02rem; line-height: 1.1; letter-spacing: .18em; }
+.brand strong { font-size: 1.02rem; line-height: 1.1; letter-spacing: -.015em; }
 .brand small { color: var(--color-muted); font-size: .8rem; }
 .mobile-nav { display: none; }
 .nav-link {

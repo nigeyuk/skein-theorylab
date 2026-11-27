@@ -9,6 +9,7 @@ import { ChordWorkspace } from '../reference/interactive/ChordWorkspace'
 import { IntervalWorkspace } from '../reference/interactive/IntervalWorkspace'
 import type { KeyboardAccess } from '../visualisation/keyboard/model'
 import { AppVersion } from './AppVersion'
+import { learningPhilosophy, productName, productTagline } from './brand'
 import { SettingsWorkspace } from './SettingsWorkspace'
 import { useNavigation } from './navigation'
 import { dashboard, workspaceGroups } from './workspaces'
@@ -52,7 +53,7 @@ function Sidebar({ active }: { active: string }) {
     <aside className="sidebar">
       <a className="brand" href={path(dashboard.id)}>
         <span className="brand-icon"><AudioWaveform size={24} aria-hidden="true" /></span>
-        <span><strong>SKEIN</strong><small>TheoryLab</small></span>
+        <span><strong>{productName}</strong><small>{productTagline}</small></span>
       </a>
       <div className="desktop-nav"><WorkspaceNav active={active} /></div>
       <details className="mobile-nav" key={active}>
@@ -83,7 +84,7 @@ function Dashboard() {
         <div className="hero-art" aria-hidden="true"><span>♩</span><span>♫</span><span>♪</span></div>
         <div className="hero-copy">
           <h1 id="workspace-title" tabIndex={-1}>Music theory<span>,</span><br />in your own time.</h1>
-          <p>Explore the structure of music, from first notes to composition, in one workspace.</p>
+          <p>{learningPhilosophy}</p>
         </div>
       </section>
       {workspaceGroups.map(({ title, workspaces }) => (
@@ -168,7 +169,7 @@ export function App() {
   useEffect(() => {
     const available = workspace.keyboard?.mode === 'available'
     input.setMidiPolicy(workspace.midi ?? { input: available, feedback: available })
-    document.title = workspace.title + ' · SKEIN TheoryLab'
+    document.title = workspace.title + ' · ' + productName
     if (initialWorkspace.current !== workspace.id) {
       midi.resetNotes()
       input.panic()

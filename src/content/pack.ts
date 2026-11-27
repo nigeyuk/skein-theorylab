@@ -2,9 +2,18 @@ import { BlobReader, BlobWriter, ZipReader, ZipWriter } from '@zip.js/zip.js'
 import type { FileEntry } from '@zip.js/zip.js'
 import { readJson, sha256, validateFile } from './files'
 import {
-  ContentError, choice, digest, identifier, integer, limits, mediaTypes, object, parseContent, supportedTypes, text,
+  ContentError, choice, digest, identifier, integer, limits, object, parseContent, parseMediaType, supportedTypes, text,
 } from './model'
 import type { LibraryEntry, MediaType, SupportedType } from './model'
+
+export const contentPackExtension = '.mytheorypack'
+const previousPackExtension = '.skeinpack'
+
+export const acceptedPackExtensions = [contentPackExtension, previousPackExtension] as const
+
+export function isContentPackFilename(filename: string) {
+  return acceptedPackExtensions.some((extension) => filename.toLowerCase().endsWith(extension))
+}
 
 const manifestPath = 'manifest.json'
 const pathFor = (hash: string) => 'files/' + hash
@@ -21,12 +30,12 @@ function parsePackFile(value: unknown): PackFile {
   const hash = digest(input.sha256)
   if (input.path !== pathFor(hash)) throw new ContentError('The manifest declares an unsafe or non-canonical asset path.')
   return { sha256: hash, path: pathFor(hash), bytes: integer(input.bytes, 'Asset size', 1, limits.fileBytes),
-    mediaType: choice(input.mediaType, mediaTypes, 'Media type') }
+    mediaType: parseMediaType(input.mediaType) }
 }
 
 function parseManifest(value: unknown) {
   const input = object(value, 'Pack manifest')
-  if (input.formatVersion !== 1) throw new ContentError('Unsupported .skeinpack format version.')
+  if (input.formatVersion !== 1) throw new ContentError('Unsupported content pack format version.')
   identifier(input.packId, 'Pack ID')
   integer(input.packRevision, 'Pack revision', 1)
   const title = text(input.title, 'Pack title')
@@ -70,7 +79,7 @@ async function extract(entry: FileEntry, max: number, media = '') {
 }
 
 export async function readContentPack(archive: Blob): Promise<{ title: string; entries: LibraryEntry[] }> {
-  if (!archive.size || archive.size > limits.archiveBytes) throw new ContentError('A .skeinpack ZIP must be non-empty and no larger than 48 MiB.')
+  if (!archive.size || archive.size > limits.archiveBytes) throw new ContentError('A content pack ZIP must be non-empty and no larger than 48 MiB.')
   const reader = new ZipReader(new BlobReader(archive), { strictness: 'strict', filenameValidation: 'strict' })
   try {
     const entries = new Map<string, FileEntry>()

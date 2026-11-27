@@ -1,11 +1,11 @@
-# Architecture
+# MyTheoryLab architecture
 
 ## Module ownership
 
 | Directory | Responsibility |
 | --- | --- |
 | `src/app/` | React shell, route registry, navigation store, dashboard and reusable interface components |
-| `src/music-theory/` | Pure pitch, interval, scale, chord, harmony and explanation operations, with an entry point intended for eventual reuse by SKEIN Score |
+| `src/music-theory/` | Pure pitch, interval, scale, chord, harmony and explanation operations, with a public entry point for eventual reuse by standalone notation editors |
 | `src/reference/` | Reference presentation and discovery using the validated content catalogue |
 | `src/exercise/` | Interprets validated exercise definitions using built-in question types, grading and feedback |
 | `src/learning/` | Learning records, mastery and progression rules |
@@ -45,7 +45,7 @@ The shell creates one reusable Web Audio engine per application instance. The fi
 
 The app selects the acoustic grand on first use and persists later choices. The versioned local manifest defines sample roots, velocity layers, release time and polyphony. The sample implementation uses `AudioBufferSourceNode` and retains decoded buffers while the app audio context is open. The synth remains available during loading and after failures. Held voices are released through their owning instrument, and explicit instrument changes cancel pending playback. Pedal semantics stay in the input path so sample playback, synth playback and future instruments share the same handling.
 
-The registration interface can host additional instrument implementations without changes to learning workspaces. SoundFont playback, user-imported instrument packs and the SKEIN Score host remain future work. See [audio architecture and sample provenance](src/audio/README.md).
+The registration interface can host additional instrument implementations without changes to learning workspaces. SoundFont playback, user-imported instrument packs and notation editor playback remain future work. See [audio architecture and sample provenance](src/audio/README.md).
 
 ### Unified input and Web MIDI
 
@@ -67,13 +67,17 @@ See the [public API and conventions](src/music-theory/README.md).
 
 Supported resources are added, updated and removed at runtime. The React Content Manager calls the Content Engine for imports, updates, search, filters, favourites and exports. The engine validates records and works against an asynchronous `ContentRepository` contract. The IndexedDB adapter stores records, favourite flags and binary assets and applies changes atomically. Browser profiles and origins have separate libraries. Clearing site data removes the local library, so export packs for recovery.
 
-The version 1 resource schema records stable IDs, type, title, description, subject, category, tags, author, attribution, licence, timestamps, revision, owner ID, visibility, workflow status, file descriptors, related IDs, optional prerequisites and difficulty. PDF documents can be classified as references, worksheets or answer sheets. Markdown, PNG, JPEG and declarative short-answer and multiple-choice exercise definitions are supported. Audio, MIDI, MusicXML and SKEIN Score identifiers are reserved for later renderers. Learning workspaces can consume the same repository contract as they gain content integration.
+The version 1 resource schema records stable IDs, type, title, description, subject, category, tags, author, attribution, licence, timestamps, revision, owner ID, visibility, workflow status, file descriptors, related IDs, optional prerequisites and difficulty. PDF documents can be classified as references, worksheets or answer sheets. Markdown, PNG, JPEG and declarative short-answer and multiple-choice exercise definitions are supported. Audio, MIDI, MusicXML and editable score identifiers are reserved for later renderers. Learning workspaces can consume the same repository contract as they gain content integration.
 
-### .skeinpack version 1
+### .mytheorypack version 1
 
 A pack is a ZIP archive with a UTF-8 JSON `manifest.json` and payload entries at `files/<sha256>`. The manifest contains `formatVersion`, `packId`, `packRevision`, `title`, `kind`, `resources` and `files`. File entries record path, media type, byte size and SHA-256 digest. Each resource has its own schema version and content revision. Exports share one resource, a selected collection or the current library. Library exports include favourites. Packs restore by previewing and merging into the current library. Split larger libraries into selected collections when they exceed the single-pack limits. Related resources outside a selected export must be exported separately or included in the collection.
 
 Stable resource and asset IDs survive compatible edits and file replacement. Import previews classify new resources, duplicates, newer revisions and conflicts. Applying a newer revision is opt-in. Older and divergent revisions are skipped. Local favourite state survives updates. Provenance distinguishes imported and bundled resources and protects bundled entries from import replacement. Phase 03A ships with an empty imported library. Future learning records should store the resource ID and revision and preserve question IDs across compatible updates. Library packs do not carry learning history or retain previous resource revisions.
+
+### Compatibility
+
+New exports use `.mytheorypack`. The ZIP payload and manifest version are unchanged, and imports still accept the previous extension. The physical IndexedDB name stays fixed so the local catalogue opens in place on the same origin. Keyboard preferences read older keys on the same origin and save updated values to the new namespace. See [storage compatibility](src/storage/README.md).
 
 ### Untrusted content
 
@@ -85,7 +89,7 @@ Markdown uses an allowlist of rendered elements with raw HTML and remote resourc
 
 The Content Engine will validate versioned curriculum definitions for pathways, courses or volumes, modules and lessons. Lessons reference reusable resources, exercises and assessments by stable IDs. Definitions carry ordering, recommended sequences, prerequisites, objectives, completion requirements, and academic and licensing metadata. A future versioned pack contract will transport these definitions and their dependencies. The existing Phase 03A resource-pack contract continues to serve the local library.
 
-The Learning Engine will evaluate progression and preserve revisioned evidence independently of curriculum content. React workspaces render the curriculum supplied by the engine. Notation activities use the planned SKEIN Score Learning-mode interface. Account ownership and access remain subject to the future server policies below. See [CURRICULUM.md](CURRICULUM.md) for the proposed model, authoring standards and benchmarks.
+The Learning Engine will evaluate progression and preserve revisioned evidence independently of curriculum content. React workspaces render the curriculum supplied by the engine. Notation activities use the planned notation editor Learning-mode interface. Account ownership and access remain subject to the future server policies below. See [CURRICULUM.md](CURRICULUM.md) for the proposed model, authoring standards and benchmarks.
 
 ### Phase 03B multi-user architecture
 
@@ -103,13 +107,13 @@ The remote platform contract exposes the current profile, a repository adapter, 
 - **PostgreSQL** provides relational constraints, transactions and row-level security for ownership and permissions. A self-managed deployment also needs identity, a service API, object storage and operating procedures. [PostgreSQL row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 - **Supabase** provides hosted PostgreSQL, Auth and Storage. A Phase 03B evaluation should test database and bucket policies together, keep service credentials on the server, and compare operations, migration, regional hosting and account deletion needs. [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security) · [Supabase storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 
-## SKEIN Score integration (planned)
+## Standalone notation editor integration (planned)
 
-TheoryLab will host the existing SKEIN Score editor in a workspace through a documented embedding interface. SKEIN Score will keep its standalone entry point and existing implementation. The host will provide workspace lifecycle, content catalogue access and learning records. SKEIN Score will own score documents, notation rendering, editing and editor commands. The existing Notation, Harmony and Composition Assistant engines will retain independent responsibilities and public interfaces.
+MyTheoryLab will host a standalone notation editor in a workspace through a documented embedding interface. The editor will retain its standalone entry point and implementation. MyTheoryLab will provide workspace lifecycle, content catalogue access and learning records. The editor will own score documents, notation rendering, editing and editor commands. The existing Notation, Harmony and Composition Assistant engines will retain independent responsibilities and public interfaces.
 
-Reuse the shared music theory core for common musical calculations. Preserve Score's Harmony engine for score-specific analysis and its Composition Assistant for composition workflows. Reuse the existing Notation engine for score editing and display. Use the shared audio and MIDI engines and virtual keyboard where their interfaces suit both applications. Route playback and note input through one set of services in the embedded workspace. The standalone entry point can provide its own service instances through the same contracts.
+Reuse the shared music theory core for common musical calculations. Preserve the editor's Harmony engine for score-specific analysis and its Composition Assistant for composition workflows. Reuse the existing Notation engine for score editing and display. Use the shared audio and MIDI engines and virtual keyboard where their interfaces suit both applications. Route playback and note input through one set of services in the embedded workspace. The standalone entry point can provide its own service instances through the same contracts.
 
-The embedding interface should document editor mounting and disposal, score loading and saving, commands and document-change events, editing policy, and the host-provided services. Keep TheoryLab routing, content persistence and learning state outside the editor. Embedding should preserve existing standalone behaviour, and both hosts should use the same editor and musical implementations. Select the integration mechanism after auditing both repositories.
+The embedding interface should document editor mounting and disposal, score loading and saving, commands and document-change events, editing policy, and the host-provided services. Keep MyTheoryLab routing, content persistence and learning state outside the editor. Embedding should preserve existing standalone behaviour, and both hosts should use the same editor and musical implementations. Select the integration mechanism after auditing both repositories.
 
 ### Editor modes
 
@@ -118,7 +122,7 @@ The embedding interface should document editor mounting and disposal, score load
 | Learning | Guided exercises open from validated score content. A configurable editing policy can lock notes, voices or regions and limit available operations. The editor enforces restrictions on commands and document mutations, including paste and undo or redo. The learning workspace supplies hints, runs supported automated assessment rules and records outcomes. |
 | Studio | Unrestricted score editing with optional analysis tools exposed through the existing engines. Learning restrictions and assessment are opt-in through an exercise configuration. |
 
-### Score content in .skeinpack
+### Score content in .mytheorypack
 
 Extend the versioned resource schemas to describe editable scores, MusicXML resources, score-based exercise definitions, reference melodies and cantus firmus examples, protected score regions, model answers, declarative assessment rules and optional playback resources. Use persistent resource IDs and revisions to connect exercise prompts, starter scores, model answers and playback assets. Protected regions should use validated score anchors that resolve to notes, voices or ranges in the referenced score revision.
 

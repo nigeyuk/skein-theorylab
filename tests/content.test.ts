@@ -3,15 +3,15 @@ import { IDBFactory } from 'fake-indexeddb'
 import { describe, expect, it, vi } from 'vitest'
 import { parseExercise, sha256, validateFile } from '../src/content/files'
 import { createContentLibrary, searchLibrary } from '../src/content/library'
-import { limits, parseContent } from '../src/content/model'
+import { limits, parseContent, parseMediaType } from '../src/content/model'
 import type { LibraryEntry } from '../src/content/model'
-import { readContentPack, writeContentPack } from '../src/content/pack'
+import { contentPackExtension, isContentPackFilename, readContentPack, writeContentPack } from '../src/content/pack'
 import { applyLibraryMutations } from '../src/content/repository'
 import type { ContentRepository } from '../src/content/repository'
 import { createIndexedDbContentRepository } from '../src/storage/indexeddb-content'
 
 const pdf = (name = 'Intervals.pdf', text = 'test PDF') => new File(['%PDF-1.7\n' + text], name)
-const markdown = (name = 'Welcome.md', text = '# Welcome to TheoryLab') => new File([text], name)
+const markdown = (name = 'Welcome.md', text = '# Welcome to MyTheoryLab') => new File([text], name)
 
 function inMemory() {
   const entries = new Map<string, LibraryEntry>()
@@ -105,12 +105,12 @@ describe('content schema and file imports', () => {
 describe('repository-neutral catalogue and IndexedDB', () => {
   it('persists metadata, blob bytes and favourites across two instances and cleans up on deletion', async () => {
     const factory = new IDBFactory()
-    const first = createContentLibrary(createIndexedDbContentRepository('persist', factory))
+    const first = createContentLibrary(createIndexedDbContentRepository('skein-theorylab-content', factory))
     const candidates = await first.prepareFiles([pdf()])
     await first.apply(candidates)
     const id = candidates[0]!.entry.record.id
     await first.setFavourite(id, true)
-    const second = createContentLibrary(createIndexedDbContentRepository('persist', factory))
+    const second = createContentLibrary(createIndexedDbContentRepository(undefined, factory))
     const item = (await second.list())[0]!
     expect(item).toMatchObject({ favourite: true, record: { id } })
     const entry = await second.get(id)
@@ -163,7 +163,18 @@ describe('repository-neutral catalogue and IndexedDB', () => {
   })
 })
 
-describe('.skeinpack', () => {
+describe('MyTheoryLab content packs', () => {
+  it('recognises the current and legacy filename extensions without broadening file matching', () => {
+    expect(contentPackExtension).toBe('.mytheorypack')
+    expect(isContentPackFilename('Library.MYTHEORYPACK')).toBe(true)
+    expect(isContentPackFilename('Library.SKEINPACK')).toBe(true)
+    expect(isContentPackFilename('Library.mytheorypack.txt')).toBe(false)
+  })
+
+  it('normalises the previous reserved score media type', () => {
+    expect(parseMediaType('application/vnd.skein.score+json')).toBe('application/vnd.mytheorylab.score+json')
+  })
+
   it('round-trips individual resources, collections and library favourites', async () => {
     const first = await entryFor()
     const second = { ...(await entryFor(markdown())), favourite: true }
@@ -179,7 +190,7 @@ describe('.skeinpack', () => {
 
   it('rejects wrong versions, missing manifests and non-ZIP files', async () => {
     const badVersion = await makeZip([{ name: 'manifest.json', blob: new Blob(['{"formatVersion":2}']) }])
-    await expect(readContentPack(badVersion)).rejects.toThrow('Unsupported .skeinpack format')
+    await expect(readContentPack(badVersion)).rejects.toThrow('Unsupported content pack format')
     const badKind = await makeZip([{ name: 'manifest.json', blob: new Blob([JSON.stringify({
       formatVersion: 1, packId: 'fixture', packRevision: 1, title: 'Fixture', kind: 'unknown',
     })]) }])
